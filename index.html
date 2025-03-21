@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>earth</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #000;
+      overflow: hidden;
+      font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+      color: #fff;
+    }
+    #globe {
+      width: 100vw;
+      height: 100vh;
+    }
+
+    /* cambecc/earth style */
+    .overlay {
+      position: absolute;
+      background: rgba(0, 0, 0, 0.4);
+      border-radius: 5px;
+      font-size: 11px;
+      line-height: 1.2em;
+    }
+    .status {
+      bottom: 3.5em;
+      left: 0.5em;
+      padding: 0.4em 0.6em;
+    }
+    .location {
+      bottom: 0.5em;
+      left: 0.5em;
+      padding: 0.4em 0.6em;
+    }
+    .data-info {
+      top: 0.5em;
+      left: 0.5em;
+      padding: 0.4em 0.6em;
+    }
+
+    /* Menu Styles - Bottom left */
+    .menu-button {
+      position: absolute;
+      bottom: 6.5em;
+      left: 0.5em;
+      background: rgba(40, 40, 40, 0.7);
+      color: #fff;
+      padding: 0.4em 0.6em;
+      border-radius: 2px;
+      cursor: pointer;
+      font-size: 12px;
+      transition: background 0.3s;
+      z-index: 100;
+    }
+    .menu-button:hover {
+      background: rgba(70, 70, 70, 0.9);
+    }
+
+    /* Menu Panel Styles - Bottom left */
+    .menu-panel {
+      position: absolute;
+      bottom: 6.5em;
+      left: 4.5em;
+      width: 300px;
+      background: rgba(40, 40, 40, 0.9);
+      color: #fff;
+      border-radius: 2px;
+      padding: 0.6em 0.8em;
+      z-index: 99;
+      transform: translateX(-350px);
+      transition: transform 0.3s ease-in-out;
+      font-size: 11px;
+      max-height: 70vh;
+      overflow-y: auto;
+    }
+    .menu-panel.visible {
+      transform: translateX(0);
+    }
+
+    /* Settings Panel */
+    .settings-panel {
+      position: absolute;
+      bottom: 6.5em;
+      left: 350px;
+      width: 300px;
+      background: rgba(40, 40, 40, 0.9);
+      color: #fff;
+      border-radius: 2px;
+      padding: 0.6em 0.8em;
+      z-index: 98;
+      transform: translateX(-350px);
+      transition: transform 0.3s ease-in-out;
+      font-size: 11px;
+      max-height: 70vh;
+      overflow-y: auto;
+      display: none;
+    }
+    .settings-panel.visible {
+      display: block;
+      transform: translateX(0);
+    }
+
+    .menu-section {
+      margin-bottom: 1em;
+    }
+    .menu-section h3 {
+      margin-top: 0;
+      margin-bottom: 0.5em;
+      color: #999;
+      border-bottom: 1px solid #555;
+      padding-bottom: 0.2em;
+      font-weight: normal;
+      font-size: 11px;
+      text-transform: uppercase;
+    }
+
+    .menu-section label {
+      display: block;
+      margin-bottom: 0.3em;
+      cursor: pointer;
+    }
+
+    .menu-section input[type="range"] {
+      width: 100%;
+      margin-bottom: 0.5em;
+      cursor: pointer;
+    }
+
+    .menu-section input[type="checkbox"] {
+      margin-right: 0.4em;
+      cursor: pointer;
+    }
+
+    .menu-section button {
+      background: #337ab7;
+      color: white;
+      border: none;
+      padding: 0.3em 0.6em;
+      border-radius: 2px;
+      cursor: pointer;
+      margin-right: 0.3em;
+      margin-bottom: 0.3em;
+      font-size: 10px;
+    }
+
+    .menu-section button:hover {
+      background: #23527c;
+    }
+
+    .btn-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.3em;
+      margin-bottom: 0.5em;
+    }
+
+    .color-option {
+      display: inline-block;
+      width: 15px;
+      height: 15px;
+      margin-right: 5px;
+      border-radius: 2px;
+      cursor: pointer;
+      border: 1px solid #666;
+    }
+
+    .color-option.selected {
+      border-color: white;
+    }
+
+    /* Grid Dots */
+    .grid-dots circle {
+      fill: rgba(255, 255, 255, 0.3);
+    }
+
+    /* Dropdown */
+    select {
+      background: #222;
+      color: #fff;
+      border: 1px solid #555;
+      padding: 0.3em;
+      margin-bottom: 0.5em;
+      width: 100%;
+      font-size: 11px;
+    }
+
+    /* Toggle button */
+    .toggle-btn {
+      display: inline-block;
+      background: #222;
+      color: #ddd;
+      padding: 0.3em 0.6em;
+      margin-right: 0.3em;
+      border-radius: 2px;
+      cursor: pointer;
+      margin-bottom: 0.3em;
+      font-size: 10px;
+      border: 1px solid #444;
+    }
+    .toggle-btn.active {
+      background: #337ab7;
+      color: white;
+      border-color: #23527c;
+    }
+
+    /* Overlay Menu - cambecc style */
+    .overlay-menu {
+      position: absolute;
+      top: 0.5em;
+      right: 0.5em;
+      padding: 0.4em;
+      background: rgba(40, 40, 40, 0.7);
+      border-radius: 2px;
+      font-size: 11px;
+      z-index: 100;
+    }
+
+    .overlay-row {
+      display: flex;
+      align-items: center;
+      margin-bottom: 0.3em;
+    }
+
+    .overlay-label {
+      flex: 0 0 110px;
+      text-align: right;
+      margin-right: 0.6em;
+      color: #bbb;
+    }
+
+    .overlay-value {
+      flex: 1;
+      display: flex;
+      align-items: center;
+    }
+
+    .overlay-selector {
+      background: #222;
+      color: #fff;
+      border: 1px solid #555;
+      padding: 0.3em;
+      width: 120px;
+      font-size: 11px;
+    }
+
+    .display-mode-btn {
+      padding: 0.2em 0.3em;
+      font-size: 10px;
+      background: #222;
+      color: #ddd;
+      border: 1px solid #444;
+      margin-left: 0.3em;
+      cursor: pointer;
+      border-radius: 2px;
+    }
+
+    .display-mode-btn.active {
+      background: #337ab7;
+      color: white;
+      border-color: #23527c;
+    }
+
+    /* Legend */
+    .legend {
+      position: absolute;
+      bottom: 0.5em;
+      right: 0.5em;
+      background: rgba(40, 40, 40, 0.7);
+      padding: 0.4em 0.6em;
+      border-radius: 2px;
+      font-size: 11px;
+      line-height: 1.2em;
+      display: none;
+    }
+    .legend.visible {
+      display: block;
+    }
+    .legend-gradient {
+      width: 20px;
+      height: 150px;
+      margin-right: 10px;
+      float: left;
+    }
+    .legend-labels {
+      float: left;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      height: 150px;
+    }
+
+    /* Tooltip styles */
+    #tooltip {
+      position: absolute;
+      background: rgba(40, 40, 40, 0.9);
+      color: white;
+      padding: 0.4em 0.6em;
+      border-radius: 2px;
+      font-size: 11px;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.3s;
+      z-index: 1000;
+    }
+
+    /* Marker and info window */
+    .marker {
+      position: absolute;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.7);
+      border: 1px solid rgba(0, 0, 0, 0.5);
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      z-index: 990;
+    }
+
+    .info-window {
+      position: absolute;
+      background: rgba(40, 40, 40, 0.9);
+      color: white;
+      padding: 0.8em;
+      border-radius: 3px;
+      font-size: 11px;
+      z-index: 1000;
+      max-width: 200px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+      transform: translateY(-100%);
+      margin-top: -10px;
+    }
+    .info-window:after {
+      content: '';
+      position: absolute;
+      bottom: -6px;
+      left: 50%;
+      width: 12px;
+      height: 12px;
+      background: rgba(40, 40, 40, 0.9);
+      transform: translateX(-50%) rotate(45deg);
+    }
+
+    footer {
+      position: absolute;
+      bottom: 0.5em;
+      right: 0.5em;
+      font-size: 9px;
+      color: #666;
+      text-align: right;
+    }
+  </style>
+</head>
+<body>
+<div id="globe"></div>
+
+<div id="data-info" class="overlay data-info">
+  <span>Source: earth-topo.json | 2025-03-21 17:19:34 UTC</span>
+</div>
+
+<div id="status" class="overlay status">
+  <span>WGS84 Earth Model</span>
+</div>
+
+<div id="location" class="overlay location">
+  <span>Drag to rotate | Scroll to zoom</span>
+</div>
+
+<!-- Menu Button (bottom left) -->
+<div id="menu-button" class="menu-button">Menu</div>
+
+<!-- Overlay Menu (cambecc style) -->
+<div class="overlay-menu">
+  <div class="overlay-row">
+    <div class="overlay-label">Overlay:</div>
+    <div class="overlay-value">
+      <select id="overlay-type" class="overlay-selector">
+        <option value="none">None</option>
+        <option value="temperature">Temperature</option>
+        <option value="windspeed">Wind Speed</option>
+        <option value="humidity">Humidity</option>
+        <option value="magvar">Magnetic Variation</option>
+      </select>
+    </div>
+  </div>
+  <div class="overlay-row">
+    <div class="overlay-label">Mode:</div>
+    <div class="overlay-value">
+      <button id="mode-gradient" class="display-mode-btn active">Gradient</button>
+      <button id="mode-vector" class="display-mode-btn">Vector</button>
+      <button id="mode-isoline" class="display-mode-btn">Isoline</button>
+    </div>
+  </div>
+  <div class="overlay-row">
+    <div class="overlay-label">Height:</div>
+    <div class="overlay-value">
+      <input type="range" id="height-level" min="0" max="10" value="0" style="width: 120px">
+      <span id="height-value">0 km</span>
+    </div>
+  </div>
+</div>
+
+<!-- Menu Panel -->
+<div id="menu-panel" class="menu-panel">
+  <div class="menu-section">
+    <h3>Display Options</h3>
+    <label>
+      <input type="checkbox" id="show-graticule" checked> Show grid
+    </label>
+    <label>
+      <input type="checkbox" id="show-grid-dots"> Show grid dots
+    </label>
+    <label>
+      <input type="checkbox" id="outline-only"> Outline only
+    </label>
+    <label>
+      <input type="checkbox" id="show-labels"> Show labels
+    </label>
+  </div>
+
+  <div class="menu-section">
+    <h3>Projection</h3>
+    <select id="projection-select">
+      <option value="orthographic" selected>Orthographic</option>
+      <option value="equirectangular">Equirectangular</option>
+      <option value="mercator">Mercator</option>
+      <option value="stereographic">Stereographic</option>
+    </select>
+
+    <label>Rotation Speed</label>
+    <input type="range" id="rotation-speed" min="0" max="100" value="0">
+  </div>
+
+  <div class="menu-section">
+    <h3>View</h3>
+    <div class="btn-group">
+      <button id="view-north-america">North America</button>
+      <button id="view-south-america">South America</button>
+      <button id="view-europe">Europe</button>
+      <button id="view-africa">Africa</button>
+      <button id="view-asia">Asia</button>
+      <button id="view-australia">Australia</button>
+      <button id="view-pacific">Pacific</button>
+      <button id="view-atlantic">Atlantic</button>
+    </div>
+  </div>
+
+  <div class="menu-section">
+    <h3>Settings</h3>
+    <button id="settings-button" style="width: 100%">Advanced Settings</button>
+  </div>
+
+  <div class="menu-section">
+    <h3>About</h3>
+    <p style="margin-top: 0;">
+      WGS84 Earth Model with full geodetic accuracy.<br>
+      Based on <a href="https://github.com/cambecc/earth" style="color: #337ab7; text-decoration: none;">cambecc/earth</a>.
+    </p>
+  </div>
+</div>
+
+<!-- Settings Panel -->
+<div id="settings-panel" class="settings-panel">
+  <div class="menu-section">
+    <h3>Advanced Settings</h3>
+    <button id="back-button" style="width: 100%">Back to Menu</button>
+  </div>
+
+  <div class="menu-section">
+    <h3>Colors</h3>
+    <div>
+      <span>Land: </span>
+      <span class="color-option selected" style="background-color: #303030;" data-color="#303030"></span>
+      <span class="color-option" style="background-color: #72B092;" data-color="#72B092"></span>
+      <span class="color-option" style="background-color: #466B6A;" data-color="#466B6A"></span>
+      <span class="color-option" style="background-color: #876A96;" data-color="#876A96"></span>
+    </div>
+    <div style="margin-top: 0.5em;">
+      <span>Ocean: </span>
+      <span class="color-option selected" style="background-color: #181818;" data-color="#181818"></span>
+      <span class="color-option" style="background-color: #001D3D;" data-color="#001D3D"></span>
+      <span class="color-option" style="background-color: #000814;" data-color="#000814"></span>
+    </div>
+  </div>
+
+  <div class="menu-section">
+    <h3>Grid Settings</h3>
+    <label>Grid Opacity</label>
+    <input type="range" id="grid-opacity" min="0" max="100" value="50">
+
+    <label>Grid Color</label>
+    <select id="grid-color">
+      <option value="#555555" selected>Gray</option>
+      <option value="#AAAAAA">Light Gray</option>
+      <option value="#FFFFFF">White</option>
+      <option value="#3388BB">Blue</option>
+    </select>
+  </div>
+
+  <div class="menu-section">
+    <h3>Overlay Settings</h3>
+    <label>Overlay Opacity</label>
+    <input type="range" id="overlay-opacity" min="0" max="100" value="70">
+
+    <label>Vector Density</label>
+    <input type="range" id="vector-density" min="1" max="10" value="5">
+
+    <label>Isoline Spacing</label>
+    <select id="isoline-spacing">
+      <option value="coarse">Coarse</option>
+      <option value="medium" selected>Medium</option>
+      <option value="fine">Fine</option>
+    </select>
+  </div>
+</div>
+
+<!-- Overlay Legend -->
+<div id="overlay-legend" class="legend">
+  <h3 style="margin-top: 0; margin-bottom: 0.5em;">Legend</h3>
+  <div style="display: flex;">
+    <div id="legend-bar" class="legend-gradient"></div>
+    <div id="legend-labels" class="legend-labels">
+      <!-- Will be filled dynamically -->
+    </div>
+  </div>
+</div>
+
+<!-- Marker and Info Window -->
+<div id="marker" class="marker" style="display: none;"></div>
+<div id="info-window" class="info-window" style="display: none;"></div>
+
+<!-- Tooltip -->
+<div id="tooltip"></div>
+
+<footer>
+  Created for httpsTeabagexe | 2025-03-21 17:19:34 UTC
+</footer>
+
+<!-- Load D3 and TopoJSON -->
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script src="https://d3js.org/topojson.v3.min.js"></script>
+
+<!-- Load our WGS84 implementation -->
+<script src="wgs84-globe.js"></script>
+</body>
+</html>
