@@ -17,7 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Configuration
     const config = {
         width: window.innerWidth,
-        height: window.innerHeight,
+        windowHeight: window.innerHeight,  // Renamed to avoid duplication
         sensitivity: 75,
         defaultScale: 280,
         maxScale: 1200,
@@ -37,7 +37,7 @@ document.addEventListener('DOMContentLoaded', () => {
         outlineOnly: false,
         overlayType: 'none',
         displayMode: 'gradient',
-        height: 0,           // height in km
+        height: 0,           // height in km (keeping this name for consistency)
         maxHeight: 10,       // max height in km representation
         overlayOpacity: 0.7,
         vectorDensity: 5,
@@ -66,11 +66,11 @@ document.addEventListener('DOMContentLoaded', () => {
         magvar: false
     };
 
-    // Create the SVG container
+// Create the SVG container
     const svg = d3.select('#globe')
         .append('svg')
         .attr('width', config.width)
-        .attr('height', config.height);
+        .attr('height', config.windowHeight);
 
     // Add a CSS class to help identify elements
     svg.attr('class', 'earth');
