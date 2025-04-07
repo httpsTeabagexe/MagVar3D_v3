@@ -51,7 +51,11 @@ select option.unavailable { color: #888; }
     max-width: 250px; /* Add a max-width */
     box-shadow: 0 1px 3px rgba(0,0,0,0.3); /* Add subtle shadow */
 }
-
+.display-mode-btn.active {
+    background: #337ab7;
+    color: white;
+    border-color: #23527c;
+}
 .overlay-row {
     display: flex;
     align-items: center;

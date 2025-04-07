@@ -295,50 +295,86 @@ function drawVectorOverlay(scale, rotation) {
 }
 
 function drawIsolineOverlay(scale, rotation) {
-    // Isoline generation is complex. It typically involves:
-    // 1. Creating a grid of data values.
-    // 2. Using a contouring algorithm (like marching squares/cubes) to find line segments.
-    // 3. Connecting segments into paths.
-    // 4. Projecting the paths onto the globe.
+    const isolineSpacingOptions = {
+        coarse: 10,
+        medium: 5,
+        fine: 2,
+    };
 
-    // Placeholder: Draw a simple message indicating isolines would be here.
-    overlayGroup.append('text')
-        .attr('x', 0)
-        .attr('y', 0)
-        .attr('text-anchor', 'middle')
-        .attr('fill', 'white')
-        .attr('font-size', '12px')
-        .text(`Isoline rendering for ${config.overlayType} (placeholder)`);
+    const isolineStep = isolineSpacingOptions[config.isolineSpacing];
 
-    console.warn("Isoline rendering is complex and not fully implemented in this refactor.");
+    // Grid spacing for sampling data
+    const gridSpacing = isolineStep;
 
-    // --- Below is a conceptual sketch, not a working implementation ---
-    /*
+    // Determine min/max values for the current overlay type
+    let minValue = Infinity;
+    let maxValue = -Infinity;
+
+    for (let lat = -90 + gridSpacing/2; lat < 90; lat += gridSpacing) {
+        for (let lon = -180 + gridSpacing/2; lon < 180; lon += gridSpacing) {
+            const value = getOverlayValue(lon, lat, config.altitudeKm, config.overlayType);
+            if (value !== null) {
+                minValue = Math.min(minValue, value);
+                maxValue = Math.max(maxValue, value);
+            }
+        }
+    }
+
+    // Generate thresholds for isolines
+    const thresholds = d3.range(Math.floor(minValue / isolineStep) * isolineStep, Math.ceil(maxValue / isolineStep) * isolineStep + isolineStep, isolineStep);
+
+    // Create a grid of data values
+    const valueGrid = [];
+    for (let lat = -90; lat <= 90; lat += gridSpacing) {
+        const row = [];
+        for (let lon = -180; lon <= 180; lon += gridSpacing) {
+            const value = getOverlayValue(lon, lat, config.altitudeKm, config.overlayType);
+            row.push(value === null ? NaN : value); // Use NaN for missing data
+        }
+        valueGrid.push(row);
+    }
+
+    // Generate contours
     const contours = d3.contours()
-        .size([360, 180]) // Grid size (lon, lat)
-        .thresholds(d3.range(minValue, maxValue, isolineStep)); // Values to contour
-
-    // Need to generate a grid of overlay values [value at lon, lat]
-    const valueGrid = []; // Populate this 2D array
+        .size([360 / gridSpacing + 1, 180 / gridSpacing + 1]) // Grid size (lon, lat)
+        .thresholds(thresholds);
 
     const contourData = contours(valueGrid.flat()); // Generate contour GeoJSON
 
+    // Draw contours
     contourData.forEach(contour => {
-        // Need to transform contour coordinates (grid indices) back to lon/lat
-        // Then project the lon/lat path onto the globe using featureToPathData
-
-        const geoJsonFeature = convertContourToGeoJSON(contour); // Implement this conversion
-        const pathData = featureToPathData(geoJsonFeature, scale, rotation);
-        const color = getOverlayColor(contour.value, config.overlayType);
-
-        overlayGroup.append('path')
-            .attr('d', pathData)
-            .attr('fill', 'none')
-            .attr('stroke', color)
-            .attr('stroke-width', 1)
-            .attr('opacity', 0.8);
-
-        // Add labels (more complex placement logic needed)
+        const pathData = convertContourToPathData(contour, scale, rotation, gridSpacing);
+        if (pathData) {
+            const color = getOverlayColor(contour.value, config.overlayType);
+            overlayGroup.append('path')
+                .attr('d', pathData)
+                .attr('fill', 'none')
+                .attr('stroke', color)
+                .attr('stroke-width', 1)
+                .attr('opacity', 0.8);
+        }
     });
-    */
+}
+
+/**
+ * Helper function to convert contour data to SVG path data
+ */
+function convertContourToPathData(contour, scale, rotation, gridSpacing) {
+    const pathSegments = [];
+    for (const ring of contour.coordinates) {
+        const segment = [];
+        for (const point of ring) {
+            const lon = (point[0] * gridSpacing) - 180;
+            const lat = (point[1] * gridSpacing) - 90;
+            const projected = applyProjection(lon, lat, scale, rotation);
+            if (projected) {
+                const [x, y] = projected;
+                segment.push(`${x.toFixed(2)},${y.toFixed(2)}`);
+            }
+        }
+        if (segment.length > 1) {
+            pathSegments.push(`M${segment.join(' L')}`);
+        }
+    }
+    return pathSegments.join(' ');
 }

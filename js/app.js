@@ -1,91 +1,110 @@
 // js/app.js
 import { config } from './config.js';
-import { loadAllData, worldData } from './data.js';
+import { loadAllData } from './data.js';
 import { initializeRenderer, renderGlobe } from './renderer.js';
 import { initializeUI } from './ui.js';
-import { applyProjection } from './wgs84.js'; // Needed for initial animation/navigation
+
+// --- Constants ---
+const ANIMATION_DURATION = 1500;
+const NAVIGATION_DURATION = 1000;
+const AUTOROTATE_INTERVAL = 50;
+const INTRO_START_ROTATION = [-75, 25, 0];
 
 // --- Application State ---
 const appState = {
     currentScale: config.defaultScale,
-    currentRotation: [...config.initialRotation], // Use initialRotation from config
-    worldData: null, // Will be loaded by data.js
-    isAnimating: false, // Flag for navigation/initial animation
+    currentRotation: [...config.initialRotation],
+    worldData: null,
+    isAnimating: false,
     autoRotateTimer: null,
 };
 
 // --- DOM Elements ---
 let svg, globeGroup, earthBoundary, overlayGroup, loadingText;
 
-// --- Initialization ---
+// --- Helper Functions ---
 
-function init() {
-    console.log("Initializing WGS84 Globe...");
-
-    // Create SVG and core groups
-    createSvgContainer();
-
-    // Show loading indicator
-    showLoadingMessage('Loading Earth Data...');
-
-    // Initialize Renderer
-    initializeRenderer(svg, globeGroup, earthBoundary, overlayGroup);
-
-    // Initialize UI (pass state and callbacks)
-    initializeUI(svg, appState, {
-        triggerRender,
-        navigateTo,
-        setRotation,
-        setScale,
-        startStopAutoRotate
-    });
-
-    // Load data and then render
-    loadAllData()
-        .then(loadedWorldData => {
-            appState.worldData = loadedWorldData; // Store loaded data in state
-            hideLoadingMessage();
-            triggerRender(true); // Initial render
-            animateIn();         // Start intro animation
-            updateFooterTimestamp(); // Update footer
-        })
-        .catch(error => {
-            console.error("Failed to initialize application:", error);
-            showLoadingMessage('Error loading data. Please refresh.', true);
-        });
+/**
+ * Updates the application state with a new rotation.
+ * @param {number[]} newRotation - The new rotation values [longitude, latitude, roll].
+ */
+function updateRotation(newRotation) {
+    appState.currentRotation = newRotation;
 }
 
-// --- SVG Setup ---
+/**
+ * Updates the application state with a new scale.
+ * @param {number} newScale - The new scale value.
+ */
+function updateScale(newScale) {
+    appState.currentScale = newScale;
+}
 
-function createSvgContainer() {
+/**
+ * Updates the application state with a new animating status.
+ * @param {boolean} isAnimating - The new animating status.
+ */
+function updateAnimating(isAnimating) {
+    appState.isAnimating = isAnimating;
+}
+
+/**
+ * Updates the application state with a new autoRotateTimer.
+ * @param {number} autoRotateTimer - The new autoRotateTimer.
+ */
+function updateAutoRotateTimer(autoRotateTimer) {
+    appState.autoRotateTimer = autoRotateTimer;
+}
+
+/**
+ * Normalizes a longitude value to be within the range of -180 to 180.
+ * @param {number} lon - The longitude value to normalize.
+ * @returns {number} The normalized longitude value.
+ */
+function normalizeLongitude(lon) {
+    return (lon + 540) % 360 - 180;
+}
+
+/**
+ * Updates the footer timestamp with the data source timestamp.
+ */
+function updateFooterTimestamp() {
+    const footer = document.querySelector('footer');
+    if (footer) {
+        footer.textContent = `Created for httpsTeabagexe | ${config.dataSourceTimestamp}`;
+    }
+}
+
+/**
+ * Creates the SVG container and core groups for the globe.
+ */
+function setupSvg() {
     svg = d3.select('#globe')
         .append('svg')
         .attr('width', config.width)
         .attr('height', config.height)
-        .attr('class', 'earth-viewer'); // Add a class for easier selection
+        .attr('class', 'earth-viewer');
 
-    // Main group for centering and scaling
     globeGroup = svg.append('g')
-        .attr('class', 'globe-group') // Add class
+        .attr('class', 'globe-group')
         .attr('transform', `translate(${config.width / 2}, ${config.height / 2})`);
 
-    // Background/Ocean (drawn first)
     earthBoundary = globeGroup.append('ellipse')
         .attr('class', 'earth-boundary')
         .attr('rx', appState.currentScale)
-        .attr('ry', appState.currentScale) // Initial aspect ratio, updated in render
+        .attr('ry', appState.currentScale)
         .attr('fill', config.oceanColor);
 
-    // Group for overlay visualizations (drawn on top of land/graticule)
     overlayGroup = globeGroup.append('g')
         .attr('class', 'overlay-visualization')
         .style('opacity', config.overlayOpacity);
-
-    // Add other base elements if needed (e.g., clip paths)
 }
 
-// --- Loading Indicator ---
-
+/**
+ * Displays a loading message on the screen.
+ * @param {string} message - The message to display.
+ * @param {boolean} isError - Whether the message is an error message.
+ */
 function showLoadingMessage(message, isError = false) {
     if (!loadingText) {
         loadingText = svg.append('text')
@@ -100,177 +119,160 @@ function showLoadingMessage(message, isError = false) {
     loadingText.style('display', 'block');
 }
 
+/**
+ * Hides the loading message from the screen.
+ */
 function hideLoadingMessage() {
     loadingText?.style('display', 'none');
 }
 
-
-// --- Rendering ---
-
+/**
+ * Schedules a render of the globe.
+ * @param {boolean} forceRedraw - Whether to force a redraw, even during animations.
+ */
 let renderRequestId = null;
-function triggerRender(forceRedraw = false) {
-    // Avoid rendering during animations controlled elsewhere
+function scheduleRender(forceRedraw = false) {
     if (appState.isAnimating && !forceRedraw) return;
 
-    // Debounce rendering using requestAnimationFrame
     if (renderRequestId) {
         cancelAnimationFrame(renderRequestId);
     }
     renderRequestId = requestAnimationFrame(() => {
-        if (appState.worldData) { // Only render if data is loaded
+        if (appState.worldData) {
             renderGlobe(appState.worldData, appState.currentScale, appState.currentRotation);
         }
         renderRequestId = null;
     });
 }
 
-// --- State Updates (Called by UI module) ---
-
-function setRotation(newRotation) {
-    appState.currentRotation = newRotation;
-    // Render is usually triggered separately by UI after setting state
-}
-
-function setScale(newScale) {
-    appState.currentScale = newScale;
-    // Render is usually triggered separately by UI after setting state
-}
-
-
-// --- Animation & Navigation ---
-
-function animateIn() {
-    // Animate from a different viewpoint to the initial one
-    const startRotation = [-75, 25, 0]; // From the side
-    const endRotation = config.initialRotation;
-    const duration = 1500; // ms
-
-    appState.isAnimating = true; // Prevent render conflicts
+/**
+ * Starts the intro animation.
+ */
+function startIntroAnimation() {
+    updateAnimating(true);
 
     d3.transition()
-        .duration(duration)
+        .duration(ANIMATION_DURATION)
         .ease(d3.easeCubicInOut)
         .tween("rotate", () => {
-            const r = d3.interpolate(startRotation, endRotation);
+            const r = d3.interpolate(INTRO_START_ROTATION, config.initialRotation);
             return (t) => {
-                // Check if still animating (might have been interrupted)
-                if(!appState.isAnimating) return; // Exit tween if animation was stopped
-                appState.currentRotation = r(t);
-                triggerRender(true); // Force render during animation
+                if (!appState.isAnimating) return;
+                updateRotation(r(t));
+                scheduleRender(true);
             };
         })
         .on("end", () => {
-            appState.isAnimating = false; // Animation finished
-            // Start auto-rotation if enabled after initial animation
+            updateAnimating(false);
             if (config.rotationSpeed > 0) startStopAutoRotate(true);
         })
         .on("interrupt", () => {
-            appState.isAnimating = false; // Animation interrupted
+            updateAnimating(false);
         });
 }
 
-
+/**
+ * Navigates to a specific longitude and latitude.
+ * @param {number} targetLon - The target longitude.
+ * @param {number} targetLat - The target latitude.
+ */
 function navigateTo(targetLon, targetLat) {
-    if (appState.isAnimating) return; // Don't start new navigation if already animating
-    startStopAutoRotate(false); // Stop auto-rotate during navigation
+    if (appState.isAnimating) return;
+    startStopAutoRotate(false);
 
     const startRotation = [...appState.currentRotation];
-    const targetRotation = [targetLon, targetLat, 0]; // Target gamma (roll) is 0
-    const duration = 1000; // ms
+    const targetRotation = [targetLon, targetLat, 0];
 
-    // Handle longitude interpolation across the 180 meridian
     let deltaLon = targetRotation[0] - startRotation[0];
     if (deltaLon > 180) deltaLon -= 360;
     if (deltaLon < -180) deltaLon += 360;
-    const finalStartRotation = [...startRotation];
-    finalStartRotation[0] = startRotation[0] + deltaLon; // This is the target wrapped the short way
 
-    appState.isAnimating = true;
+    updateAnimating(true);
 
     d3.transition()
-        .duration(duration)
+        .duration(NAVIGATION_DURATION)
         .ease(d3.easeCubicInOut)
         .tween("navigate", () => {
-            const r = d3.interpolate(startRotation, [startRotation[0]+deltaLon, targetRotation[1], targetRotation[2]]);
+            const r = d3.interpolate(startRotation, [startRotation[0] + deltaLon, targetRotation[1], targetRotation[2]]);
             return (t) => {
-                if(!appState.isAnimating) return;
-                let current = r(t);
-                // Normalize longitude during tween
-                current[0] = (current[0] + 540) % 360 - 180;
-                appState.currentRotation = current;
-                triggerRender(true);
+                if (!appState.isAnimating) return;
+                const current = r(t);
+                current[0] = normalizeLongitude(current[0]);
+                updateRotation(current);
+                scheduleRender(true);
             };
         })
         .on("end", () => {
-            appState.isAnimating = false;
-            // Ensure final rotation is precise
-            appState.currentRotation = [(targetRotation[0] + 540) % 360 - 180, targetRotation[1], targetRotation[2]];
-            triggerRender(true);
+            updateAnimating(false);
+            updateRotation([normalizeLongitude(targetRotation[0]), targetRotation[1], targetRotation[2]]);
+            scheduleRender(true);
         })
         .on("interrupt", () => {
-            appState.isAnimating = false;
+            updateAnimating(false);
         });
 }
 
-// --- Autorotation ---
-
+/**
+ * Starts or stops the auto-rotation of the globe.
+ * @param {boolean} start - Whether to start or stop auto-rotation.
+ */
 function startStopAutoRotate(start) {
-    console.log(`APP: startStopAutoRotate called with start=${start}`); // Debug Log 3
-
-    // --- Potential Bug Area ---
-    // It's crucial to clear the *existing* timer *before* potentially starting a new one.
-    // Also, manage the config.autoRotate flag consistently.
-
     if (appState.autoRotateTimer) {
         clearInterval(appState.autoRotateTimer);
-        appState.autoRotateTimer = null;
-        console.log("APP: Cleared existing autoRotateTimer"); // Debug Log 4
+        updateAutoRotateTimer(null);
     }
 
-    config.autoRotate = start && config.rotationSpeed > 0; // Update the flag based on intent AND speed
+    config.autoRotate = start && config.rotationSpeed > 0;
 
-    if (config.autoRotate) {
-        console.log("APP: Starting new autoRotateTimer"); // Debug Log 5
-        appState.autoRotateTimer = setInterval(() => {
-            // Check if we *should* be rotating right now
-            if (!appState.isAnimating && config.autoRotate) {
-                const rotation = [...appState.currentRotation];
-                const speedFactor = config.rotationSpeed / 50; // Adjust speed sensitivity
+    if (!config.autoRotate) return;
 
-                rotation[0] += speedFactor;
-                rotation[0] = (rotation[0] + 540) % 360 - 180; // Normalize longitude
+    updateAutoRotateTimer(setInterval(() => {
+        if (appState.isAnimating || !config.autoRotate) return;
 
-                // Directly update state - avoids needing callbacks within app.js
-                appState.currentRotation = rotation;
+        const rotation = [...appState.currentRotation];
+        const speedFactor = config.rotationSpeed / 50;
 
-                // Trigger a smooth render (no forced redraw)
-                triggerRender(false);
+        rotation[0] += speedFactor;
+        rotation[0] = normalizeLongitude(rotation[0]);
 
-                // Update location display if needed (optional, can be performance intensive)
-                // import { updateLocationDisplay } from './ui.js'; updateLocationDisplay();
-            } else {
-                // console.log("APP: Interval tick skipped (animating or stopped)"); // Debug Log 6 (Optional)
-            }
-        }, 50); // Interval duration (e.g., 50ms for ~20fps updates)
-    } else {
-        console.log("APP: Auto-rotate stopped (start=false or speed=0)"); // Debug Log 7
-        // Ensure slider reflects the stopped state if stopped programmatically
-        const speedSlider = document.getElementById('rotation-speed');
-        if (speedSlider && parseInt(speedSlider.value) > 0 && !start) { // If slider > 0 but we called stop(false)
-            // speedSlider.value = 0; // Uncomment if you want drag to reset slider
-        }
-    }
+        updateRotation(rotation);
+        scheduleRender(false);
+    }, AUTOROTATE_INTERVAL));
 }
 
-// --- Utility ---
-function updateFooterTimestamp() {
-    const footer = document.querySelector('footer');
-    if (footer) {
-        footer.textContent = `Created for httpsTeabagexe | ${config.dataSourceTimestamp}`;
-    }
-}
+/**
+ * Initializes the application.
+ */
+function init() {
+    console.log("Initializing WGS84 Globe...");
 
+    setupSvg();
+    showLoadingMessage('Loading Earth Data...');
+
+    initializeRenderer(svg, globeGroup, earthBoundary, overlayGroup);
+
+    // Corrected callback names here
+    initializeUI(svg, appState, {
+        scheduleRender, // Pass scheduleRender as scheduleRender
+        navigateTo,
+        updateRotation,
+        updateScale,
+        startStopAutoRotate
+    });
+
+    loadAllData()
+        .then(loadedWorldData => {
+            appState.worldData = loadedWorldData;
+            hideLoadingMessage();
+            scheduleRender(true);
+            startIntroAnimation();
+            updateFooterTimestamp();
+        })
+        .catch(error => {
+            console.error("Failed to initialize application:", error);
+            showLoadingMessage('Error loading data. Please refresh.', true);
+        });
+}
 
 // --- Start Application ---
-// Use DOMContentLoaded or ensure script is loaded defer/module
 document.addEventListener('DOMContentLoaded', init);
