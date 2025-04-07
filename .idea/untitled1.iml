@@ -12,5 +12,6 @@
     <orderEntry type="library" name="d3-geo.v2" level="application" />
     <orderEntry type="library" name="topojson.v3" level="application" />
     <orderEntry type="library" name="d3.v7" level="application" />
+    <orderEntry type="library" name="chroma-js" level="application" />
   </component>
 </module>

@@ -17,7 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Configuration
     const config = {
         width: window.innerWidth,
-        height: window.innerHeight,
+        windowHeight: window.innerHeight,  // Renamed to avoid duplication
         sensitivity: 75,
         defaultScale: 280,
         maxScale: 1200,
@@ -37,7 +37,7 @@ document.addEventListener('DOMContentLoaded', () => {
         outlineOnly: false,
         overlayType: 'none',
         displayMode: 'gradient',
-        height: 0,           // height in km
+        height: 0,           // height in km (keeping this name for consistency)
         maxHeight: 10,       // max height in km representation
         overlayOpacity: 0.7,
         vectorDensity: 5,
@@ -66,11 +66,11 @@ document.addEventListener('DOMContentLoaded', () => {
         magvar: false
     };
 
-    // Create the SVG container
+// Create the SVG container
     const svg = d3.select('#globe')
         .append('svg')
         .attr('width', config.width)
-        .attr('height', config.height);
+        .attr('height', config.windowHeight);
 
     // Add a CSS class to help identify elements
     svg.attr('class', 'earth');
@@ -118,7 +118,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const coeffs = [];
 
         // Parse header (first line)
-        const headerMatch = lines[0].trim().match(/(\d+\.\d+)\s+([^\s]+)\s+(.+)/);
+        const headerMatch = lines[0].trim().match(/(\d+\.\d+)\s+(\S+)\s+(.+)/);
         if (headerMatch) {
             wmmEpoch = parseFloat(headerMatch[1]);
             console.log(`Loaded WMM model: ${headerMatch[2]}, epoch ${wmmEpoch}, dated ${headerMatch[3]}`);
@@ -222,9 +222,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // Calculate declination (magnetic variation)
-        const declination = Math.atan2(y, x) * 180 / Math.PI;
-
-        return declination;
+        return Math.atan2(y, x) * 180 / Math.PI;
     }
 
     /**
@@ -243,7 +241,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Use recurrence relation for higher terms
         // This is a very simplified version - proper implementations use stable recurrence relations
-        let p = 0;
+        let p;
 
         if (m === n) {
             p = cosLat * legendre(n-1, n-1, sinLat);
@@ -478,9 +476,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // For orthographic, use our 3D WGS84 projection
         const cartesian = geodeticToCartesian(lon, lat);
         const rotated = rotateCartesian(cartesian, rotation);
-        const projected = projectToScreen(rotated, scale);
-
-        return projected;
+        return projectToScreen(rotated, scale);
     }
 
     /**
@@ -751,7 +747,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (value > -20) return '#1E90FF';
                 if (value > -30) return '#0000FF';
                 if (value > -40) return '#000080';
-                return '#191970'; // Extremely cold
+                return '#191970'; // Freezing
 
             case 'windspeed':
                 // Wind speed color scale (m/s)
@@ -822,7 +818,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Magnetic declination is the angle itself
             const magvar = getOverlayValue(lon, lat, height);
             if (magvar !== null) {
-                return 0 + magvar; // 0 degrees is true north, magvar is the deviation
+                return magvar; // 0 degrees is true north, magvar is the deviation
             }
         }
 
@@ -1221,7 +1217,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (legendLabels) {
             legendLabels.innerHTML = '';
 
-            let labels = [];
+            let labels;
             switch (config.overlayType) {
                 case 'magvar':
                     labels = ['20° E', '10° E', '0°', '10° W', '20° W'];
@@ -1339,9 +1335,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             // Convert to GeoJSON
-            const land = topojson.feature(worldData, landObject);
-
-            return land;
+            return topojson.feature(worldData, landObject);
         } catch (error) {
             console.error("Error extracting land features:", error);
             return null;
@@ -1378,7 +1372,7 @@ document.addEventListener('DOMContentLoaded', () => {
         globeGroup.selectAll('.label').remove();
 
         // Add labels for major countries
-        countries.forEach((country, i) => {
+        countries.forEach((country) => {
             const [lon, lat, name] = country;
 
             // Project using the selected projection
@@ -1642,7 +1636,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let dragRequestId = null;
 
     function dragged(event) {
-        // Stop auto-rotation if user drags
+        // Stop autorotation if user drags
         if (config.autoRotate) {
             stopAutoRotation();
         }
@@ -1695,7 +1689,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Auto-rotation function
+    // Autorotation function
     function startAutoRotation() {
         config.autoRotate = true;
 
@@ -1704,7 +1698,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         autoRotateTimer = setInterval(() => {
-            // FIXED: Make auto-rotation go in the correct direction (west to east)
+            // FIXED: Make autorotation go in the correct direction (west to east)
             currentRotation[0] += config.rotationSpeed / 100;
             renderGlobe(worldData, currentScale, currentRotation);
         }, 50);
@@ -1721,7 +1715,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Navigate to specific view
     function navigateTo(longitude, latitude) {
-        // Stop auto-rotation if active
+        // Stop autorotation if active
         if (config.autoRotate) {
             stopAutoRotation();
         }
