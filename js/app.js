@@ -1,6 +1,6 @@
 // js/app.js
 import { config } from './config.js';
-import { loadAllData } from './data.js';
+import { loadAllData } from './data.js'; // updateDataSourceInfo is called within data.js now
 import { initializeRenderer, renderGlobe } from './renderer.js';
 import { initializeUI } from './ui.js';
 
@@ -65,15 +65,7 @@ function normalizeLongitude(lon) {
     return (lon + 540) % 360 - 180;
 }
 
-/**
- * Updates the footer timestamp with the data source timestamp.
- */
-function updateFooterTimestamp() {
-    const footer = document.querySelector('footer');
-    if (footer) {
-        footer.textContent = `Created for httpsTeabagexe | ${config.dataSourceTimestamp}`;
-    }
-}
+// REMOVED: updateFooterTimestamp() - handled via About panel now
 
 /**
  * Creates the SVG container and core groups for the globe.
@@ -81,9 +73,11 @@ function updateFooterTimestamp() {
 function setupSvg() {
     svg = d3.select('#globe')
         .append('svg')
-        .attr('width', config.width)
-        .attr('height', config.height)
-        .attr('class', 'earth-viewer');
+        .attr('width', '100%') // Use 100% to fit container
+        .attr('height', '100%')
+        .attr('viewBox', `0 0 ${config.width} ${config.height}`) // Use viewBox for scaling
+        .attr('preserveAspectRatio', 'xMidYMid meet') // Maintain aspect ratio
+        .attr('class', 'earth-viewer'); // Added class for styling
 
     globeGroup = svg.append('g')
         .attr('class', 'globe-group')
@@ -106,16 +100,21 @@ function setupSvg() {
  * @param {boolean} isError - Whether the message is an error message.
  */
 function showLoadingMessage(message, isError = false) {
+    // Ensure SVG exists before trying to append
+    if (!svg) {
+        console.warn("SVG not ready for loading message.");
+        return;
+    }
     if (!loadingText) {
         loadingText = svg.append('text')
-            .attr('class', 'loading-text')
+            .attr('class', 'loading-text') // Class for styling
             .attr('x', config.width / 2)
             .attr('y', config.height / 2)
             .attr('text-anchor', 'middle')
-            .attr('dy', '0.35em')
-            .attr('fill', isError ? '#ff8888' : '#ffffff');
+            .attr('dy', '0.35em') // Vertical centering
+            .attr('fill', isError ? '#ff8888' : config['--navigraph-text-primary'] || '#ffffff'); // Use CSS variable if possible
     }
-    loadingText.text(message).attr('fill', isError ? '#ff8888' : '#ffffff');
+    loadingText.text(message).attr('fill', isError ? '#ff8888' : config['--navigraph-text-primary'] || '#ffffff');
     loadingText.style('display', 'block');
 }
 
@@ -157,19 +156,26 @@ function startIntroAnimation() {
         .tween("rotate", () => {
             const r = d3.interpolate(INTRO_START_ROTATION, config.initialRotation);
             return (t) => {
+                // Check if tween is still valid (might be interrupted)
                 if (!appState.isAnimating) return;
                 updateRotation(r(t));
-                scheduleRender(true);
+                scheduleRender(true); // Force render during animation tween
             };
         })
         .on("end", () => {
             updateAnimating(false);
+            // Re-render one last time to ensure final state
+            scheduleRender(true);
             if (config.rotationSpeed > 0) startStopAutoRotate(true);
         })
         .on("interrupt", () => {
+            // Ensure animating flag is false if interrupted
             updateAnimating(false);
+            // Re-render to reflect the interrupted state
+            scheduleRender(true);
         });
 }
+
 
 /**
  * Navigates to a specific longitude and latitude.
@@ -178,14 +184,24 @@ function startIntroAnimation() {
  */
 function navigateTo(targetLon, targetLat) {
     if (appState.isAnimating) return;
-    startStopAutoRotate(false);
+    startStopAutoRotate(false); // Stop rotation during navigation
 
+    const currentProj = config.projection; // Get current projection
     const startRotation = [...appState.currentRotation];
-    const targetRotation = [targetLon, targetLat, 0];
 
-    let deltaLon = targetRotation[0] - startRotation[0];
+    // Normalize target longitude
+    const normTargetLon = normalizeLongitude(targetLon);
+
+    // For non-orthographic views, rotation might behave differently.
+    // Simple approach: Just set rotation directly for 2D maps?
+    // Or tween longitude only? Let's stick with the 3D-like tween for consistency.
+
+    // Calculate shortest path for longitude
+    let deltaLon = normTargetLon - startRotation[0];
     if (deltaLon > 180) deltaLon -= 360;
     if (deltaLon < -180) deltaLon += 360;
+
+    const targetRotation = [startRotation[0] + deltaLon, targetLat, startRotation[2]]; // Keep roll
 
     updateAnimating(true);
 
@@ -193,24 +209,30 @@ function navigateTo(targetLon, targetLat) {
         .duration(NAVIGATION_DURATION)
         .ease(d3.easeCubicInOut)
         .tween("navigate", () => {
-            const r = d3.interpolate(startRotation, [startRotation[0] + deltaLon, targetRotation[1], targetRotation[2]]);
+            const rInterpolate = d3.interpolate(startRotation, targetRotation);
             return (t) => {
-                if (!appState.isAnimating) return;
-                const current = r(t);
+                if (!appState.isAnimating) return; // Check if interrupted
+                const current = rInterpolate(t);
+                // Normalize longitude during interpolation
                 current[0] = normalizeLongitude(current[0]);
                 updateRotation(current);
-                scheduleRender(true);
+                scheduleRender(true); // Force render during animation
             };
         })
         .on("end", () => {
             updateAnimating(false);
-            updateRotation([normalizeLongitude(targetRotation[0]), targetRotation[1], targetRotation[2]]);
-            scheduleRender(true);
+            // Ensure final rotation is exactly the target (normalized)
+            updateRotation([normTargetLon, targetLat, startRotation[2]]);
+            scheduleRender(true); // Render final state
+            if (config.rotationSpeed > 0) startStopAutoRotate(true); // Restart autorotate if needed
         })
         .on("interrupt", () => {
             updateAnimating(false);
+            scheduleRender(true); // Render interrupted state
+            if (config.rotationSpeed > 0) startStopAutoRotate(true); // Restart autorotate if needed
         });
 }
+
 
 /**
  * Starts or stops the auto-rotation of the globe.
@@ -222,23 +244,61 @@ function startStopAutoRotate(start) {
         updateAutoRotateTimer(null);
     }
 
+    // Update config state based on request and speed setting
     config.autoRotate = start && config.rotationSpeed > 0;
 
-    if (!config.autoRotate) return;
+    if (!config.autoRotate) {
+        // console.log("Auto-rotate stopped.");
+        return;
+    }
 
+    // console.log(`Auto-rotate starting with speed: ${config.rotationSpeed}`);
     updateAutoRotateTimer(setInterval(() => {
-        if (appState.isAnimating || !config.autoRotate) return;
+        // Double-check conditions inside interval
+        if (appState.isAnimating || !config.autoRotate || config.rotationSpeed <= 0) {
+            // Stop interval if conditions aren't met anymore
+            if (appState.autoRotateTimer) {
+                clearInterval(appState.autoRotateTimer);
+                updateAutoRotateTimer(null);
+                // console.log("Auto-rotate stopped by interval check.");
+            }
+            return;
+        }
 
         const rotation = [...appState.currentRotation];
-        const speedFactor = config.rotationSpeed / 50;
+        const speedFactor = config.rotationSpeed / 50; // Adjust speed scaling if needed
 
         rotation[0] += speedFactor;
-        rotation[0] = normalizeLongitude(rotation[0]);
+        rotation[0] = normalizeLongitude(rotation[0]); // Keep longitude in range
 
         updateRotation(rotation);
-        scheduleRender(false);
+        scheduleRender(false); // Regular render is sufficient
     }, AUTOROTATE_INTERVAL));
 }
+
+/**
+ * Adjusts globe size and projection center on window resize.
+ */
+function handleResize() {
+    // Update config dimensions (might not be strictly needed if using SVG viewBox)
+    config.width = window.innerWidth - 60; // Adjust for sidebar
+    config.height = window.innerHeight;
+
+    if (svg) {
+        // Update SVG viewbox if its size changes relative to window
+        // The '100%' width/height with viewBox should handle most cases,
+        // but explicit update might be needed for complex scenarios.
+        // svg.attr('viewBox', `0 0 ${config.width} ${config.height}`); // Re-apply viewBox
+
+        // Recenter the globe group within the new SVG size/viewBox
+        // Center calculation needs config.width/height which represent the *viewBox* dimensions
+        globeGroup.attr('transform', `translate(${config.width / 2}, ${config.height / 2})`);
+
+        // Re-render the globe with potentially new dimensions affecting projection
+        scheduleRender(true);
+    }
+}
+
 
 /**
  * Initializes the application.
@@ -246,31 +306,43 @@ function startStopAutoRotate(start) {
 function init() {
     console.log("Initializing WGS84 Globe...");
 
-    setupSvg();
-    showLoadingMessage('Loading Earth Data...');
+    // Initial resize calculation
+    config.width = window.innerWidth - 60; // Account for fixed sidebar
+    config.height = window.innerHeight;
+
+    setupSvg(); // Setup SVG first
+    showLoadingMessage('Loading Earth Data...'); // Show loading message on SVG
 
     initializeRenderer(svg, globeGroup, earthBoundary, overlayGroup);
 
-    // Corrected callback names here
+    // Initialize UI controls (event listeners for buttons, sliders etc. inside panels)
     initializeUI(svg, appState, {
-        scheduleRender, // Pass scheduleRender as scheduleRender
+        scheduleRender,
         navigateTo,
         updateRotation,
         updateScale,
         startStopAutoRotate
     });
 
+    // Add resize listener
+    window.addEventListener('resize', handleResize);
+
+    // Load data
     loadAllData()
         .then(loadedWorldData => {
-            appState.worldData = loadedWorldData;
-            hideLoadingMessage();
-            scheduleRender(true);
-            startIntroAnimation();
-            updateFooterTimestamp();
+            if (loadedWorldData) {
+                appState.worldData = loadedWorldData;
+                hideLoadingMessage();
+                scheduleRender(true); // Initial render
+                startIntroAnimation(); // Start animation after initial render
+            } else {
+                throw new Error("World data loading failed or returned empty.");
+            }
         })
         .catch(error => {
             console.error("Failed to initialize application:", error);
-            showLoadingMessage('Error loading data. Please refresh.', true);
+            hideLoadingMessage(); // Hide 'Loading...' message
+            showLoadingMessage('Error loading data. Please refresh.', true); // Show error
         });
 }
 

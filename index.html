@@ -3,156 +3,189 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>WGS84 Globe</title>
+  <title>WGS84 Globe - Navigraph Style</title>
   <link rel="stylesheet" href="style.css">
-  <!-- The <style> block has been removed -->
+  <!-- Add Font Awesome or similar icon library if desired -->
+  <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"> -->
 </head>
 <body>
-<div id="globe"></div>
 
-<!-- UI Overlays -->
-<div id="data-info" class="overlay data-info">
-  <span>Source: Loading... | Timestamp</span>
-</div>
-<div id="status" class="overlay status">
-  <span>WGS84 Globe</span>
-</div>
-<div id="location" class="overlay location">
-  <span>Initializing...</span>
+<!-- Left Sidebar (Navigraph Style) -->
+<div id="left-sidebar">
+  <div class="sidebar-item active" data-panel="search-panel">
+    <span class="icon">🔍</span> <!-- Placeholder Icon -->
+    <span class="label">Search</span>
+  </div>
+  <div class="sidebar-item" data-panel="display-panel">
+    <span class="icon">⚙️</span> <!-- Placeholder Icon -->
+    <span class="label">Display</span>
+  </div>
+  <div class="sidebar-item" data-panel="views-panel">
+    <span class="icon">🌍</span> <!-- Placeholder Icon -->
+    <span class="label">Views</span>
+  </div>
+  <div class="sidebar-item" data-panel="overlays-panel">
+    <span class="icon">📊</span> <!-- Placeholder Icon -->
+    <span class="label">Overlays</span>
+  </div>
+  <div class="sidebar-item" data-panel="settings-panel">
+    <span class="icon">🔧</span> <!-- Placeholder Icon -->
+    <span class="label">Settings</span>
+  </div>
+  <div class="sidebar-item" data-panel="about-panel">
+    <span class="icon">ℹ️</span> <!-- Placeholder Icon -->
+    <span class="label">About</span>
+  </div>
+  <!-- Add more items as needed -->
 </div>
 
-<!-- Menu Button -->
-<div id="menu-button" class="menu-button">Menu</div>
+<!-- Content Panels (Appear next to sidebar) -->
+<div id="sidebar-content">
+  <!-- Search Panel (Example) -->
+  <div id="search-panel" class="sidebar-content-panel visible">
+    <h3>Search</h3>
+    <input type="text" placeholder="Search locations...">
+    <p>Search results would appear here.</p>
+  </div>
 
-<!-- Top Right Overlay Controls -->
-<div class="overlay-menu">
-  <div class="overlay-row">
-    <div class="overlay-label">Overlay:</div>
-    <div class="overlay-value">
-      <select id="overlay-type" class="overlay-selector">
-        <option value="none">None</option>
-        <option value="magvar">Magnetic Variation</option>
-        <option value="temperature">Temperature</option>
-        <option value="windspeed">Wind Speed</option>
-        <option value="humidity">Humidity</option>
+  <!-- Display Options Panel -->
+  <div id="display-panel" class="sidebar-content-panel">
+    <h3>Display Options</h3>
+    <div class="menu-section">
+      <label><input type="checkbox" id="show-graticule"> Show Grid</label>
+      <label><input type="checkbox" id="show-grid-dots"> Show Grid Dots</label>
+      <label><input type="checkbox" id="outline-only"> Land Outline Only</label>
+      <label><input type="checkbox" id="show-labels"> Show Labels</label>
+    </div>
+    <div class="menu-section">
+      <h3>Projection</h3>
+      <select id="projection-select">
+        <option value="orthographic">Orthographic</option>
+        <option value="equirectangular">Equirectangular</option>
+        <option value="mercator">Mercator</option>
+        <option value="stereographic">Stereographic</option>
+      </select>
+      <label>Auto-Rotation Speed</label>
+      <input type="range" id="rotation-speed" min="0" max="20" value="0">
+    </div>
+    <div class="menu-section">
+      <h3>Grid Settings</h3>
+      <label>Grid Opacity</label>
+      <input type="range" id="grid-opacity" min="0" max="100" value="50">
+      <label>Grid Color</label>
+      <select id="grid-color">
+        <option value="#555555">Gray</option>
+        <option value="#AAAAAA">Light Gray</option>
+        <option value="#FFFFFF">White</option>
+        <option value="#3388BB">Blue</option>
       </select>
     </div>
   </div>
-  <div class="overlay-row">
-    <div class="overlay-label">Mode:</div>
-    <div class="overlay-value">
-      <button id="mode-gradient" class="display-mode-btn">Gradient</button>
-      <button id="mode-vector" class="display-mode-btn">Vector</button>
-      <button id="mode-isoline" class="display-mode-btn active">Isoline</button>
-    </div>
-  </div>
-  <div class="overlay-row">
-    <div class="overlay-label">Altitude:</div>
-    <div class="overlay-value">
-      <input type="range" id="height-level" min="0" max="10" value="0">
-      <span id="height-value">0 km</span>
-    </div>
-  </div>
-</div>
 
-<!-- Menu Panel (Left) -->
-<div id="menu-panel" class="panel menu-panel">
-  <div class="menu-section">
-    <h3>Display Options</h3>
-    <label><input type="checkbox" id="show-graticule"> Show Grid</label>
-    <label><input type="checkbox" id="show-grid-dots"> Show Grid Dots</label>
-    <label><input type="checkbox" id="outline-only"> Land Outline Only</label>
-    <label><input type="checkbox" id="show-labels"> Show Labels</label>
-  </div>
-  <div class="menu-section">
-    <h3>Projection</h3>
-    <select id="projection-select">
-      <option value="orthographic">Orthographic</option>
-      <option value="equirectangular">Equirectangular</option>
-      <option value="mercator">Mercator</option>
-      <option value="stereographic">Stereographic</option>
-    </select>
-    <label>Auto-Rotation Speed</label>
-    <input type="range" id="rotation-speed" min="0" max="20" value="0"> <!-- Adjusted range -->
-  </div>
-  <div class="menu-section">
-    <h3>View</h3>
-    <div class="btn-group">
-      <button id="view-atlantic">Atlantic</button>
-      <button id="view-pacific">Pacific</button>
-      <button id="view-north-america">N. America</button>
-      <button id="view-south-america">S. America</button>
-      <button id="view-europe">Europe</button>
-      <button id="view-africa">Africa</button>
-      <button id="view-asia">Asia</button>
-      <button id="view-australia">Australia</button>
+  <!-- Views Panel -->
+  <div id="views-panel" class="sidebar-content-panel">
+    <h3>Predefined Views</h3>
+    <div class="menu-section">
+      <div class="btn-group">
+        <button id="view-atlantic">Atlantic</button>
+        <button id="view-pacific">Pacific</button>
+        <button id="view-north-america">N. America</button>
+        <button id="view-south-america">S. America</button>
+        <button id="view-europe">Europe</button>
+        <button id="view-africa">Africa</button>
+        <button id="view-asia">Asia</button>
+        <button id="view-australia">Australia</button>
+      </div>
     </div>
   </div>
-  <div class="menu-section">
-    <h3>Settings</h3>
-    <button id="settings-button" style="width: 100%">Advanced Settings</button>
+
+  <!-- Overlays Panel -->
+  <div id="overlays-panel" class="sidebar-content-panel">
+    <h3>Data Overlays</h3>
+    <div class="menu-section">
+      <div class="overlay-row">
+        <div class="overlay-label">Overlay:</div>
+        <div class="overlay-value">
+          <select id="overlay-type" class="overlay-selector">
+            <option value="none">None</option>
+            <option value="magvar">Magnetic Variation</option>
+            <option value="temperature">Temperature</option>
+            <option value="windspeed">Wind Speed</option>
+            <option value="humidity">Humidity</option>
+          </select>
+        </div>
+      </div>
+      <div class="overlay-row">
+        <div class="overlay-label">Mode:</div>
+        <div class="overlay-value">
+          <button id="mode-gradient" class="display-mode-btn">Gradient</button>
+          <button id="mode-vector" class="display-mode-btn">Vector</button>
+          <button id="mode-isoline" class="display-mode-btn active">Isoline</button>
+        </div>
+      </div>
+      <div class="overlay-row">
+        <div class="overlay-label">Altitude:</div>
+        <div class="overlay-value">
+          <input type="range" id="height-level" min="0" max="10" value="0">
+          <span id="height-value">0 km</span>
+        </div>
+      </div>
+    </div>
+    <div class="menu-section">
+      <h3>Overlay Settings</h3>
+      <label>Overlay Opacity</label>
+      <input type="range" id="overlay-opacity" min="0" max="100" value="70">
+      <label>Vector Density</label>
+      <input type="range" id="vector-density" min="1" max="10" value="5">
+      <label>Isoline Spacing</label>
+      <select id="isoline-spacing">
+        <option value="coarse">Coarse</option>
+        <option value="medium" selected>Medium</option>
+        <option value="fine">Fine</option>
+      </select>
+    </div>
   </div>
-  <div class="menu-section">
+
+
+  <!-- Settings Panel -->
+  <div id="settings-panel" class="sidebar-content-panel">
+    <h3>Advanced Settings</h3>
+    <div class="menu-section">
+      <h3>Colors</h3>
+      <div>
+        <span>Land:</span>
+        <span class="color-option" style="background-color: #303030;" data-color="#303030"></span>
+        <span class="color-option" style="background-color: #2A9D8F;" data-color="#2A9D8F"></span>
+        <span class="color-option" style="background-color: #72B092;" data-color="#72B092"></span>
+        <span class="color-option" style="background-color: #466B6A;" data-color="#466B6A"></span>
+      </div>
+      <div style="margin-top: 0.5em;">
+        <span>Ocean:</span>
+        <span class="color-option" style="background-color: #181818;" data-color="#181818"></span>
+        <span class="color-option" style="background-color: #183059;" data-color="#183059"></span>
+        <span class="color-option" style="background-color: #001D3D;" data-color="#001D3D"></span>
+        <span class="color-option" style="background-color: #000814;" data-color="#000814"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- About Panel -->
+  <div id="about-panel" class="sidebar-content-panel">
     <h3>About</h3>
-    <p style="margin-top: 0; font-size: 10px;">
+    <p>
       Interactive WGS84 Globe<br>
       Data: Natural Earth, WMM 2025<br>
+      Source: <span id="data-source-info">Loading...</span> | <span id="data-source-timestamp">Timestamp</span><br>
       Inspired by <a href="https://github.com/cambecc/earth" target="_blank" style="color: #69c; text-decoration: none;">cambecc/earth</a>.
     </p>
   </div>
+
 </div>
 
-<!-- Settings Panel (Left) -->
-<div id="settings-panel" class="panel settings-panel">
-  <div class="menu-section">
-    <button id="back-button" style="width: 100%; margin-bottom: 1em;">← Back to Menu</button>
-    <h3>Advanced Settings</h3>
-  </div>
-  <div class="menu-section">
-    <h3>Colors</h3>
-    <div>
-      <span>Land:</span>
-      <span class="color-option" style="background-color: #303030;" data-color="#303030"></span>
-      <span class="color-option" style="background-color: #2A9D8F;" data-color="#2A9D8F"></span>
-      <span class="color-option" style="background-color: #72B092;" data-color="#72B092"></span>
-      <span class="color-option" style="background-color: #466B6A;" data-color="#466B6A"></span>
-    </div>
-    <div style="margin-top: 0.5em;">
-      <span>Ocean:</span>
-      <span class="color-option" style="background-color: #181818;" data-color="#181818"></span>
-      <span class="color-option" style="background-color: #183059;" data-color="#183059"></span>
-      <span class="color-option" style="background-color: #001D3D;" data-color="#001D3D"></span>
-      <span class="color-option" style="background-color: #000814;" data-color="#000814"></span>
-    </div>
-  </div>
-  <div class="menu-section">
-    <h3>Grid Settings</h3>
-    <label>Grid Opacity</label>
-    <input type="range" id="grid-opacity" min="0" max="100" value="50">
-    <label>Grid Color</label>
-    <select id="grid-color">
-      <option value="#555555">Gray</option>
-      <option value="#AAAAAA">Light Gray</option>
-      <option value="#FFFFFF">White</option>
-      <option value="#3388BB">Blue</option>
-    </select>
-  </div>
-  <div class="menu-section">
-    <h3>Overlay Settings</h3>
-    <label>Overlay Opacity</label>
-    <input type="range" id="overlay-opacity" min="0" max="100" value="70">
-    <label>Vector Density</label>
-    <input type="range" id="vector-density" min="1" max="10" value="5">
-    <label>Isoline Spacing</label>
-    <select id="isoline-spacing">
-      <option value="coarse">Coarse</option>
-      <option value="medium" selected>Medium</option>
-      <option value="fine">Fine</option>
-    </select>
-  </div>
-</div>
+<!-- Main Globe Area -->
+<div id="globe"></div>
 
-<!-- Overlay Legend -->
+<!-- Overlay Legend (Bottom Right) -->
 <div id="overlay-legend" class="legend">
   <h3>Legend Title</h3>
   <div class="legend-content">
@@ -170,8 +203,9 @@
 <!-- Tooltip -->
 <div id="tooltip"></div>
 
+<!-- Footer (Bottom Right, Navigraph style) -->
 <footer>
-  Created for httpsTeabagexe | Timestamp
+  <span id="footer-info">WGS84 Globe | © 2025</span>
 </footer>
 
 <!-- Load D3 and TopoJSON -->
@@ -180,9 +214,11 @@
 <!-- Load Chroma.js for color scales (optional but useful) -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chroma-js/2.4.2/chroma.min.js"></script>
 
-
 <!-- Load the main application module -->
 <script type="module" src="js/app.js"></script>
+
+<!-- Add UI Interaction Script (Needs to be created/updated) -->
+<script src="js/sidebar-ui.js"></script> <!-- You'll need to create this -->
 
 </body>
 </html>

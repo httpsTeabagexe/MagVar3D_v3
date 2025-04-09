@@ -1,153 +1,343 @@
-body { margin: 0; padding: 0; background-color: #000; overflow: hidden; font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; color: #fff; }
-#globe { width: 100vw; height: 100vh; }
-/* cambecc/earth style overlays */
-.overlay { position: absolute; background: rgba(0, 0, 0, 0.4); border-radius: 5px; font-size: 11px; line-height: 1.2em; padding: 0.4em 0.6em; color: #ccc; }
-.status { bottom: 3.5em; left: 0.5em; }
-.location { bottom: 0.5em; left: 0.5em; }
-.data-info { top: 0.5em; left: 0.5em; }
-/* Menu Styles */
-.menu-button { position: absolute; bottom: 6.5em; left: 0.5em; background: rgba(40, 40, 40, 0.7); color: #fff; padding: 0.4em 0.6em; border-radius: 2px; cursor: pointer; font-size: 12px; transition: background 0.3s; z-index: 100; }
-.menu-button:hover { background: rgba(70, 70, 70, 0.9); }
-/* Menu/Settings Panel Base */
-.panel { position: absolute; bottom: 6.5em; left: 4.5em; width: 300px; background: rgba(40, 40, 40, 0.9); color: #fff; border-radius: 2px; padding: 0.6em 0.8em; z-index: 99; transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out; font-size: 11px; max-height: 70vh; overflow-y: auto; /* Common styles */ }
-/* Menu Panel */
-.menu-panel { transform: translateX(-350px); opacity: 0; pointer-events: none; }
-.menu-panel.visible { transform: translateX(0); opacity: 1; pointer-events: auto; }
-/* Settings Panel */
-.settings-panel { transform: translateX(-350px); opacity: 0; pointer-events: none; z-index: 98; /* Below menu */ }
-.settings-panel.visible { transform: translateX(0); opacity: 1; pointer-events: auto; }
-/* Menu Content */
-.menu-section { margin-bottom: 1em; }
-.menu-section h3 { margin-top: 0; margin-bottom: 0.5em; color: #999; border-bottom: 1px solid #555; padding-bottom: 0.2em; font-weight: normal; font-size: 11px; text-transform: uppercase; }
-.menu-section label { display: block; margin-bottom: 0.3em; cursor: pointer; }
-.menu-section input[type="range"] { width: 100%; margin-bottom: 0.5em; cursor: pointer; }
-.menu-section input[type="checkbox"] { margin-right: 0.4em; cursor: pointer; vertical-align: middle; }
-.menu-section button { background: #337ab7; color: white; border: none; padding: 0.3em 0.6em; border-radius: 2px; cursor: pointer; margin-right: 0.3em; margin-bottom: 0.3em; font-size: 10px; }
-.menu-section button:hover { background: #23527c; }
-.btn-group { display: flex; flex-wrap: wrap; gap: 0.3em; margin-bottom: 0.5em; }
-.color-option { display: inline-block; width: 15px; height: 15px; margin-right: 5px; border-radius: 2px; cursor: pointer; border: 1px solid #666; vertical-align: middle; }
-.color-option.selected { border-color: white; box-shadow: 0 0 3px white; }
-/* Grid Dots */
-.grid-dots circle { fill: rgba(255, 255, 255, 0.3); }
-/* Dropdown */
-select { background: #222; color: #fff; border: 1px solid #555; padding: 0.3em; margin-bottom: 0.5em; width: 100%; font-size: 11px; }
-select option.unavailable { color: #888; }
-/* Toggle button */
-.toggle-btn { display: inline-block; background: #222; color: #ddd; padding: 0.3em 0.6em; margin-right: 0.3em; border-radius: 2px; cursor: pointer; margin-bottom: 0.3em; font-size: 10px; border: 1px solid #444; }
-.toggle-btn.active { background: #337ab7; color: white; border-color: #23527c; }
-
-/* === MODIFICATIONS START === */
-
-/* Overlay Menu - cambecc style */
-.overlay-menu {
-    position: absolute;
-    top: 0.5em;
-    right: 0.5em;
-    padding: 0.4em 0.6em; /* Adjusted padding */
-    background: rgba(40, 40, 40, 0.8); /* Slightly more opaque */
-    border-radius: 3px; /* Slightly larger radius */
-    font-size: 11px;
-    z-index: 100;
-    max-width: 250px; /* Add a max-width */
-    box-shadow: 0 1px 3px rgba(0,0,0,0.3); /* Add subtle shadow */
-}
-.display-mode-btn.active {
-    background: #337ab7;
-    color: white;
-    border-color: #23527c;
-}
-.overlay-row {
-    display: flex;
-    align-items: center;
-    margin-bottom: 0.4em; /* Consistent margin */
-}
-/* Remove margin from the last row to prevent extra space at bottom */
-.overlay-row:last-child {
-    margin-bottom: 0;
+/* Base Styles - Navigraph Inspired (Refined) */
+:root {
+    --navigraph-bg-dark: #15181C;       /* Darker background */
+    --navigraph-bg-medium: #242830;    /* Panel background - slightly less blue */
+    --navigraph-bg-light: #313640;     /* Hover/Active background - subtle */
+    --navigraph-border: #2A2E36;       /* Subtle Borders */
+    --navigraph-text-primary: #dcdcdc; /* Primary text (off-white) */
+    --navigraph-text-secondary: #8A919F; /* Secondary text/labels (dimmer off-white) */
+    --navigraph-accent: #4A90E2;        /* Accent blue - slightly desaturated */
 }
 
-.overlay-label {
-    /* flex: 0 0 110px; /* OLD - Too wide */
-    flex: 0 0 65px;   /* NEW - Reduced width */
-    text-align: right;
-    margin-right: 0.5em; /* Reduced margin */
-    color: #bbb;
-    white-space: nowrap; /* Prevent label text wrapping */
-}
-
-.overlay-value {
-    flex: 1; /* Allow value area to take remaining space */
-    display: flex;
-    align-items: center;
-    min-width: 0; /* Crucial: Allows flex items inside to shrink below their content size */
-}
-
-.overlay-selector {
-    background: #222;
-    color: #fff;
-    border: 1px solid #555;
-    padding: 0.3em;
-    /* width: 120px; /* OLD - Fixed width */
-    width: 100%;     /* NEW - Use available space */
-    max-width: 130px;/* Optional: Limit how wide it gets */
-    font-size: 11px;
-    box-sizing: border-box; /* Include padding in width calculation */
-}
-
-.display-mode-btn {
-    padding: 0.2em 0.4em; /* Slightly more horizontal padding */
-    font-size: 10px;
-    background: #222;
-    color: #ddd;
-    border: 1px solid #444;
-    margin-left: 0.4em; /* Consistent margin */
-    cursor: pointer;
-    border-radius: 2px;
-    white-space: nowrap; /* Prevent button text wrapping */
-    flex-shrink: 0; /* Prevent buttons from shrinking too much */
-}
-/* Remove margin from the first button in the group */
-.overlay-value > .display-mode-btn:first-child {
-    margin-left: 0;
-}
-
-/* Altitude slider row specific adjustments */
-#height-level {
-    flex-grow: 1; /* Allow slider to take available space */
-    width: auto; /* Remove fixed width if any */
-    min-width: 50px; /* Ensure it's reasonably clickable */
-    margin: 0 0.5em 0 0; /* Adjust margin */
+body {
+    margin: 0;
     padding: 0;
-    height: 10px; /* Adjust height for better alignment */
+    background-color: #000; /* Outer space background */
+    overflow: hidden;
+    font-family: "Segoe UI", Roboto, "Helvetica Neue", Helvetica, Arial, sans-serif; /* Common UI font */
+    color: var(--navigraph-text-primary);
+    display: flex; /* Use flexbox for layout */
+}
+
+/* Left Sidebar */
+#left-sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 60px; /* Standard icon sidebar width */
+    background-color: var(--navigraph-bg-dark);
+    border-right: 1px solid var(--navigraph-border);
+    z-index: 200;
+    display: flex;
+    flex-direction: column;
+    padding-top: 10px;
+    user-select: none; /* Prevent text selection */
+}
+
+.sidebar-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 0; /* Slightly more vertical padding */
     cursor: pointer;
+    transition: background-color 0.15s ease;
+    border-left: 3px solid transparent; /* Placeholder for active state */
+    margin-left: -1px; /* Align border correctly */
 }
-#height-value {
-    font-variant-numeric: tabular-nums; /* Keep numbers aligned */
-    min-width: 3.5em; /* Ensure space for "10 km" */
-    text-align: right;
-    color: #ccc;
+
+.sidebar-item .icon {
+    font-size: 18px; /* Slightly smaller icons */
+    margin-bottom: 5px;
+    color: var(--navigraph-text-secondary);
+    transition: color 0.15s ease;
+    /* If using Font Awesome: font-family: 'Font Awesome 6 Free'; font-weight: 900; */
+}
+
+.sidebar-item .label {
+    font-size: 9px;
+    text-transform: uppercase;
+    color: var(--navigraph-text-secondary);
+    transition: color 0.15s ease;
+}
+
+.sidebar-item:hover {
+    background-color: var(--navigraph-bg-light);
+}
+.sidebar-item:hover .icon,
+.sidebar-item:hover .label {
+    color: var(--navigraph-text-primary);
+}
+
+.sidebar-item.active {
+    background-color: var(--navigraph-accent);
+    border-left: 3px solid var(--navigraph-text-primary); /* Indicate active */
+}
+.sidebar-item.active .icon,
+.sidebar-item.active .label {
+    color: #fff; /* White text on accent color */
+}
+
+/* Sidebar Content Area (Panels) */
+#sidebar-content {
+    position: fixed;
+    left: 60px; /* Position next to the sidebar */
+    top: 0;
+    bottom: 0;
+    width: 320px; /* Width of the content panels */
+    z-index: 199;
+    overflow: hidden; /* Prevent panels from overlapping */
+    pointer-events: none; /* Allow clicks to pass through empty area */
+}
+
+.sidebar-content-panel {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: var(--navigraph-bg-medium);
+    border-right: 1px solid var(--navigraph-border);
+    padding: 20px 15px; /* More top/bottom padding */
+    box-sizing: border-box;
+    opacity: 0;
+    transform: translateX(-100%); /* Start offscreen */
+    transition: opacity 0.25s ease-in-out, transform 0.25s ease-in-out;
+    pointer-events: none; /* Initially hidden panels shouldn't block */
+    overflow-y: auto; /* Enable scrolling within panel */
+
+    /* Custom scrollbar styling (optional, WebKit browsers) */
+    &::-webkit-scrollbar {
+        width: 6px;
+    }
+    &::-webkit-scrollbar-track {
+        background: var(--navigraph-bg-medium);
+    }
+    &::-webkit-scrollbar-thumb {
+        background-color: var(--navigraph-bg-light);
+        border-radius: 3px;
+    }
+}
+
+
+.sidebar-content-panel.visible {
+    opacity: 1;
+    transform: translateX(0); /* Slide in */
+    pointer-events: auto; /* Allow interaction when visible */
+}
+
+/* Panel Content Styling (Reusing some old styles, adapting others) */
+.sidebar-content-panel h3 {
+    margin-top: 0;
+    margin-bottom: 1em;
+    color: var(--navigraph-text-secondary);
+    border-bottom: 1px solid var(--navigraph-border);
+    padding-bottom: 0.5em; /* More padding below title */
+    font-weight: 600;
+    font-size: 12px; /* Slightly smaller */
+    text-transform: uppercase;
+    letter-spacing: 0.5px; /* Slight letter spacing */
+}
+
+.menu-section { margin-bottom: 1.8em; } /* Increased spacing */
+
+.menu-section label {
+    display: block;
+    margin-bottom: 0.6em; /* More space below labels */
+    cursor: pointer;
+    font-size: 12px;
+    color: var(--navigraph-text-primary);
+}
+.menu-section label input[type="checkbox"] {
+    margin-right: 0.8em; /* More space next to checkbox */
+    cursor: pointer;
+    vertical-align: middle;
+    accent-color: var(--navigraph-accent); /* Style checkbox color */
+}
+
+/* Input Styling */
+input[type="text"], select {
+    background: var(--navigraph-bg-dark);
+    color: var(--navigraph-text-primary);
+    border: 1px solid var(--navigraph-border);
+    padding: 0.6em 0.8em; /* Slightly more padding */
+    margin-bottom: 1em; /* More space below inputs */
+    width: 100%;
+    font-size: 12px;
+    border-radius: 3px;
+    box-sizing: border-box;
+    outline: none; /* Remove default outline */
+}
+input[type="text"]:focus, select:focus {
+    border-color: var(--navigraph-accent); /* Highlight on focus */
+}
+
+input[type="range"] {
+    appearance: none; /* Override default look */
+    width: 100%;
+    height: 4px; /* Slimmer track */
+    background: var(--navigraph-bg-light);
+    outline: none;
+    border-radius: 2px;
+    cursor: pointer;
+    margin-bottom: 0.8em;
+}
+/* Thumb styles for WebKit browsers */
+input[type="range"]::-webkit-slider-thumb {
+    appearance: none;
+    width: 14px;
+    height: 14px;
+    background: var(--navigraph-accent);
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid var(--navigraph-bg-medium); /* Match panel background */
+}
+/* Thumb styles for Firefox */
+input[type="range"]::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    background: var(--navigraph-accent);
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid var(--navigraph-bg-medium); /* Match panel background */
+}
+
+/* Button Styling */
+button, .display-mode-btn {
+    background: var(--navigraph-bg-light);
+    color: var(--navigraph-text-primary);
+    border: 1px solid var(--navigraph-border);
+    padding: 0.6em 1em; /* Adjusted padding */
+    border-radius: 3px;
+    cursor: pointer;
+    margin-right: 0.5em;
+    margin-bottom: 0.5em;
+    font-size: 11px;
+    font-weight: 500; /* Slightly bolder */
+    transition: background-color 0.2s ease, border-color 0.2s ease;
     white-space: nowrap; /* Prevent wrapping */
-    flex-shrink: 0; /* Don't let the text value shrink */
+}
+button:hover, .display-mode-btn:hover {
+    background: #414752; /* Slightly lighter hover */
+    border-color: #505662;
+}
+.btn-group { display: flex; flex-wrap: wrap; gap: 0.5em; margin-bottom: 0.5em; }
+
+.display-mode-btn.active {
+    background: var(--navigraph-accent);
+    color: #fff;
+    border-color: var(--navigraph-accent);
+}
+.display-mode-btn.active:hover {
+    background: #3E7CC0; /* Slightly darker blue on hover */
+    border-color: #3E7CC0;
 }
 
-/* === MODIFICATIONS END === */
+/* Color options */
+.color-option { display: inline-block; width: 20px; height: 20px; margin-right: 5px; border-radius: 3px; cursor: pointer; border: 1px solid var(--navigraph-border); vertical-align: middle; transition: transform 0.1s ease; }
+.color-option:hover { transform: scale(1.1); }
+.color-option.selected { border: 2px solid white; box-shadow: 0 0 5px rgba(255, 255, 255, 0.7); }
 
+/* Overlay Controls Specific Styles */
+.overlay-row { display: flex; align-items: center; margin-bottom: 1em; font-size: 12px;}
+.overlay-label { flex: 0 0 75px; /* Slightly wider */ text-align: right; margin-right: 12px; color: var(--navigraph-text-secondary); font-size: 11px; }
+.overlay-value { flex: 1; display: flex; align-items: center; min-width: 0; }
+.overlay-selector { width: 100%; max-width: 160px; /* Wider selector */ padding: 0.6em 0.8em;}
+#height-level { flex-grow: 1; width: auto; min-width: 60px; margin: 0 1em 0 0; }
+#height-value { font-variant-numeric: tabular-nums; min-width: 4.5em; /* More space */ text-align: right; color: var(--navigraph-text-primary); white-space: nowrap; font-size: 11px;}
+.overlay-value > .display-mode-btn { margin-left: 0.5em; padding: 0.4em 0.7em; /* Adjusted padding */ }
+.overlay-value > .display-mode-btn:first-child { margin-left: 0; }
 
-/* Legend */
-.legend { position: absolute; bottom: 3.5em; right: 0.5em; background: rgba(40, 40, 40, 0.7); padding: 0.6em 0.8em; border-radius: 2px; font-size: 11px; line-height: 1.2em; display: none; color: #ccc; }
+/* Main Globe Area */
+#globe {
+    position: fixed; /* Make sure it's fixed */
+    left: 60px;     /* Start after the sidebar */
+    top: 0;
+    width: calc(100vw - 60px); /* Fill remaining width */
+    height: 100vh;
+    z-index: 1; /* Behind sidebar and panels */
+}
+.earth-viewer { /* Class added to SVG in app.js */
+    display: block; /* Prevent extra space below SVG */
+}
+
+/* Grid Dots */
+.grid-dots circle { fill: rgba(200, 200, 200, 0.25); } /* Dimmer dots */
+
+/* Legend (Similar styling, adjusted position) */
+.legend {
+    position: absolute;
+    bottom: 45px; /* Adjusted position */
+    right: 15px;
+    background: rgba(36, 40, 48, 0.85); /* Updated background var(--navigraph-bg-medium with alpha) */
+    padding: 10px 12px;
+    border-radius: 3px;
+    font-size: 11px;
+    line-height: 1.2em;
+    display: none;
+    color: var(--navigraph-text-secondary);
+    z-index: 100;
+    border: 1px solid var(--navigraph-border);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3); /* Add shadow */
+}
 .legend.visible { display: block; }
-.legend h3 { margin-top: 0; margin-bottom: 0.5em; color: #eee; font-weight: normal; text-align: center; border-bottom: 1px solid #555; padding-bottom: 0.3em;}
+.legend h3 { margin-top: 0; margin-bottom: 0.8em; color: var(--navigraph-text-primary); font-weight: 600; text-align: center; border-bottom: 1px solid var(--navigraph-border); padding-bottom: 0.6em; font-size: 12px; }
 .legend-content { display: flex; }
-.legend-gradient { width: 20px; height: 150px; margin-right: 10px; border: 1px solid #555;}
-.legend-labels { position: relative; width: 50px; height: 150px; } /* Use relative for absolute positioned labels */
-.legend-labels span { font-size: 10px; color: #ccc; white-space: nowrap; }
-/* Tooltip styles */
-#tooltip { position: absolute; background: rgba(25, 25, 25, 0.9); color: white; padding: 0.4em 0.6em; border-radius: 3px; font-size: 11px; pointer-events: none; opacity: 0; transition: opacity 0.2s; z-index: 1000; border: 1px solid #555; max-width: 180px;}
-/* Marker and info window */
-.marker { position: absolute; width: 10px; height: 10px; border-radius: 50%; background: rgba(255, 255, 255, 0.8); border: 1px solid rgba(0, 0, 0, 0.6); transform: translate(-50%, -50%); pointer-events: none; z-index: 990; box-shadow: 0 0 5px rgba(255, 255, 255, 0.5); }
-.info-window { position: absolute; background: rgba(40, 40, 40, 0.9); color: white; padding: 0.8em; border-radius: 3px; font-size: 11px; z-index: 1000; max-width: 200px; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5); transform: translate(-50%, -100%); /* Position centered above marker */ margin-top: -10px; /* Space above marker */ pointer-events: none; /* Usually non-interactive */}
-.info-window::after { content: ''; position: absolute; bottom: -6px; left: 50%; width: 12px; height: 12px; background: rgba(40, 40, 40, 0.9); transform: translateX(-50%) rotate(45deg); z-index: -1; /* Behind the window */}
-/* Footer */
-footer { position: absolute; bottom: 0.5em; right: 0.5em; font-size: 9px; color: #666; text-align: right; }
+.legend-gradient { width: 20px; height: 150px; margin-right: 10px; border: 1px solid var(--navigraph-border); }
+.legend-labels { position: relative; width: 60px; height: 150px; }
+.legend-labels span { font-size: 10px; color: var(--navigraph-text-secondary); white-space: nowrap; }
+/* Position labels more accurately within legend */
+.legend-labels span { position: absolute; transform: translateY(50%); /* Center vertically relative to bottom pos */ left: 5px; /* Position relative to labels container */ }
+
+/* Tooltip */
+#tooltip {
+    position: absolute;
+    background: var(--navigraph-bg-dark);
+    color: var(--navigraph-text-primary);
+    padding: 6px 10px; /* Slightly larger padding */
+    border-radius: 3px;
+    font-size: 11px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s;
+    z-index: 1000;
+    border: 1px solid var(--navigraph-border);
+    max-width: 220px;
+    white-space: nowrap;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+}
+
+/* Marker and Info Window (Basic styling update) */
+.marker { position: absolute; width: 10px; height: 10px; border-radius: 50%; background: rgba(74, 144, 226, 0.8); /* Updated accent color */ border: 1px solid rgba(255, 255, 255, 0.7); transform: translate(-50%, -50%); pointer-events: none; z-index: 990; box-shadow: 0 0 6px rgba(74, 144, 226, 0.6); }
+.info-window { position: absolute; background: var(--navigraph-bg-medium); color: var(--navigraph-text-primary); padding: 12px; border-radius: 3px; font-size: 11px; z-index: 1000; max-width: 200px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4); transform: translate(-50%, -100%); margin-top: -12px; pointer-events: none; border: 1px solid var(--navigraph-border); }
+.info-window::after { content: ''; position: absolute; bottom: -6px; left: 50%; width: 12px; height: 12px; background: var(--navigraph-bg-medium); transform: translateX(-50%) rotate(45deg); z-index: -1; border-right: 1px solid var(--navigraph-border); border-bottom: 1px solid var(--navigraph-border); }
+
+/* Footer (Navigraph Style) */
+footer {
+    position: absolute;
+    bottom: 10px;
+    right: 15px;
+    font-size: 10px;
+    color: var(--navigraph-text-secondary);
+    background-color: rgba(21, 24, 28, 0.8); /* var(--navigraph-bg-dark with alpha) */
+    padding: 4px 8px;
+    border-radius: 3px;
+    z-index: 100;
+}
+#footer-info { /* Specific span ID from HTML */
+    display: block;
+}
+
 /* Loading Text */
-.loading-text { font-size: 16px; font-weight: bold; }
+.loading-text {
+    font-size: 16px;
+    font-weight: 600; /* Bolder */
+    fill: var(--navigraph-text-primary);
+    text-anchor: middle; /* Ensure it's centered */
+}
+
+/* Remove old overlay styles no longer used */
+.overlay, .status, .location, .data-info, .menu-button, .panel, .overlay-menu {
+    display: none !important; /* Ensure they are hidden */
+}
