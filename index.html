@@ -3,181 +3,355 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>WGS84 Globe - Navigraph Style</title>
+  <title>WGS84 Globe - Navigraph Style v3</title>
   <link rel="stylesheet" href="style.css">
   <!-- Add Font Awesome or similar icon library if desired -->
   <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"> -->
 </head>
 <body>
 
-<!-- Left Sidebar (Navigraph Style) -->
+<!-- Left Sidebar (Icon Bar) -->
 <div id="left-sidebar">
   <div class="sidebar-item active" data-panel="search-panel">
-    <span class="icon">🔍</span> <!-- Placeholder Icon -->
-    <span class="label">Search</span>
+    <span class="icon">🔍</span> <span class="label">Search</span>
   </div>
-  <div class="sidebar-item" data-panel="display-panel">
-    <span class="icon">⚙️</span> <!-- Placeholder Icon -->
-    <span class="label">Display</span>
-  </div>
-  <div class="sidebar-item" data-panel="views-panel">
-    <span class="icon">🌍</span> <!-- Placeholder Icon -->
-    <span class="label">Views</span>
+  <div class="sidebar-item" data-panel="display-panel"> <!-- Display now holds map layers/presets -->
+    <span class="icon">🗺️</span> <span class="label">Map</span> <!-- Changed Icon/Label -->
   </div>
   <div class="sidebar-item" data-panel="overlays-panel">
-    <span class="icon">📊</span> <!-- Placeholder Icon -->
-    <span class="label">Overlays</span>
+    <span class="icon">📊</span> <span class="label">Overlays</span>
+  </div>
+  <div class="sidebar-item" data-panel="views-panel">
+    <span class="icon">🌍</span> <span class="label">Views</span>
   </div>
   <div class="sidebar-item" data-panel="settings-panel">
-    <span class="icon">🔧</span> <!-- Placeholder Icon -->
-    <span class="label">Settings</span>
+    <span class="icon">🔧</span> <span class="label">Settings</span>
   </div>
   <div class="sidebar-item" data-panel="about-panel">
-    <span class="icon">ℹ️</span> <!-- Placeholder Icon -->
-    <span class="label">About</span>
+    <span class="icon">ℹ️</span> <span class="label">About</span>
   </div>
-  <!-- Add more items as needed -->
 </div>
+
+<!-- Top Control Bar -->
+<div id="top-control-bar">
+  <!-- Toggle Button for Top Bar -->
+  <button id="toggle-top-bar" class="top-bar-toggle" title="Toggle Top Bar">▲</button>
+
+  <!-- *** UPDATED BUTTON BELOW *** -->
+  <button id="toggle-widget-panel" class="top-bar-button square-button" title="Open/Close Widget Selector">
+    <span class="icon">▦</span> <!-- U+25A6 SQUARED SQUARE -->
+  </button>
+  <!-- *** END UPDATED BUTTON *** -->
+
+  <button id="top-btn-route" class="top-bar-button" title="Route Planning">
+    <span class="icon">↛</span> <span class="label">Route</span>
+  </button>
+  <button id="top-btn-weather" class="top-bar-button active" title="Weather Options">
+    <span class="icon">☁</span> <span class="label">Weather</span>
+  </button>
+  <button id="top-btn-telemetry" class="top-bar-button" title="Telemetry Data">
+    <span class="icon">⌚</span> <span class="label">Telemetry</span>
+  </button>
+  <button id="top-btn-pinboard" class="top-bar-button" title="Pinboards">
+    <span class="icon"></span> <span class="label">Pinboard</span>
+  </button>
+</div>
+
 
 <!-- Content Panels (Appear next to sidebar) -->
 <div id="sidebar-content">
-  <!-- Search Panel (Example) -->
+  <!-- Search Panel -->
   <div id="search-panel" class="sidebar-content-panel visible">
-    <h3>Search</h3>
-    <input type="text" placeholder="Search locations...">
-    <p>Search results would appear here.</p>
+    <div class="panel-header">
+      <h3>Search</h3>
+      <button class="hide-panel-button" title="Hide Panel">✕</button>
+    </div>
+    <div class="panel-inner-content"> <!-- Added Inner Container -->
+      <input type="text" placeholder="Search locations...">
+      <p>Let's start exploring</p>
+      <p style="color: var(--navigraph-text-secondary); font-size: 11px;">Use the Search textfield to get results for your journey.</p>
+    </div>
   </div>
 
-  <!-- Display Options Panel -->
+  <!-- Display Panel (Now includes Map Presets/Layers) -->
   <div id="display-panel" class="sidebar-content-panel">
-    <h3>Display Options</h3>
-    <div class="menu-section">
-      <label><input type="checkbox" id="show-graticule"> Show Grid</label>
-      <label><input type="checkbox" id="show-grid-dots"> Show Grid Dots</label>
-      <label><input type="checkbox" id="outline-only"> Land Outline Only</label>
-      <label><input type="checkbox" id="show-labels"> Show Labels</label>
+    <div class="panel-header">
+      <h3>Map Display</h3> <!-- Renamed -->
+      <button class="hide-panel-button" title="Hide Panel">✕</button>
     </div>
-    <div class="menu-section">
-      <h3>Projection</h3>
-      <select id="projection-select">
-        <option value="orthographic">Orthographic</option>
-        <option value="equirectangular">Equirectangular</option>
-        <option value="mercator">Mercator</option>
-        <option value="stereographic">Stereographic</option>
-      </select>
-      <label>Auto-Rotation Speed</label>
-      <input type="range" id="rotation-speed" min="0" max="20" value="0">
-    </div>
-    <div class="menu-section">
-      <h3>Grid Settings</h3>
-      <label>Grid Opacity</label>
-      <input type="range" id="grid-opacity" min="0" max="100" value="50">
-      <label>Grid Color</label>
-      <select id="grid-color">
-        <option value="#555555">Gray</option>
-        <option value="#AAAAAA">Light Gray</option>
-        <option value="#FFFFFF">White</option>
-        <option value="#3388BB">Blue</option>
-      </select>
-    </div>
-  </div>
+    <div class="panel-inner-content"> <!-- Added Inner Container -->
 
-  <!-- Views Panel -->
-  <div id="views-panel" class="sidebar-content-panel">
-    <h3>Predefined Views</h3>
-    <div class="menu-section">
-      <div class="btn-group">
-        <button id="view-atlantic">Atlantic</button>
-        <button id="view-pacific">Pacific</button>
-        <button id="view-north-america">N. America</button>
-        <button id="view-south-america">S. America</button>
-        <button id="view-europe">Europe</button>
-        <button id="view-africa">Africa</button>
-        <button id="view-asia">Asia</button>
-        <button id="view-australia">Australia</button>
+      <!-- Map Presets Subcategory -->
+      <div class="menu-section">
+        <h4>Map Presets</h4>
+        <div class="preset-list">
+          <div class="preset-item">
+            <span>IFR</span>
+          </div>
+          <div class="preset-item sub-item interactive"> <!-- Interactive items -->
+            <span>Auto IFR</span>
+            <label class="switch" title="Toggle Auto IFR">
+              <input type="checkbox" id="toggle-auto-ifr">
+              <span class="slider round"></span>
+            </label>
+          </div>
+          <div class="preset-item sub-item active interactive"> <!-- Active state -->
+            <span>IFR HIGH <small>(Modified)</small></span>
+            <button class="reset-button" title="Reset Preset">Reset</button>
+          </div>
+          <div class="preset-item sub-item">
+            <span>IFR LOW</span>
+          </div>
+          <div class="preset-item divider"> <!-- Divider style -->
+            <span>Other</span>
+          </div>
+          <div class="preset-item">
+            <span>VFR</span>
+          </div>
+          <div class="preset-item">
+            <span>WORLD MAP</span>
+          </div>
+          <div class="preset-item">
+            <span>SATELLITE</span>
+          </div>
+          <!-- Add more presets as needed -->
+          <div class="preset-item sub-item">
+            <span>FAA VFR SECTIONALS (US)</span>
+          </div>
+          <div class="preset-item sub-item">
+            <span>FAA IFR HIGH (US)</span>
+          </div>
+          <!-- Add FAA IFR LOW (US) if needed -->
+        </div>
       </div>
+
+      <!-- Map Layers Subcategory -->
+      <div class="menu-section">
+        <h4>Map Layers</h4>
+        <div class="layer-list">
+          <div class="layer-item interactive">
+            <span>Airports</span>
+            <label class="switch" title="Toggle Airports">
+              <input type="checkbox" id="toggle-layer-airports" checked>
+              <span class="slider round"></span>
+            </label>
+          </div>
+          <div class="layer-item interactive">
+            <span>Navaids</span>
+            <label class="switch" title="Toggle Navaids">
+              <input type="checkbox" id="toggle-layer-navaids" checked>
+              <span class="slider round"></span>
+            </label>
+          </div>
+          <div class="layer-item interactive">
+            <span>Airspace</span>
+            <label class="switch" title="Toggle Airspace">
+              <input type="checkbox" id="toggle-layer-airspace">
+              <span class="slider round"></span>
+            </label>
+          </div>
+          <!-- Placeholder for layers from Pic 3/4 -->
+          <div class="layer-item placeholder interactive">
+            <span class="icon-placeholder">△</span> <!-- Up Triangle -->
+            <span>Waypoints</span>
+            <label class="switch" title="Toggle Waypoints">
+              <input type="checkbox" id="toggle-layer-waypoints" checked>
+              <span class="slider round"></span>
+            </label>
+          </div>
+          <div class="layer-item placeholder interactive">
+            <span class="icon-placeholder">△</span> <!-- Placeholder -->
+            <span style="opacity: 0.5;">Airways <small>(Zoom In)</small></span>
+            <label class="switch" title="Toggle Airways">
+              <input type="checkbox" id="toggle-layer-airways">
+              <span class="slider round"></span>
+            </label>
+          </div>
+          <!-- Add other layer items based on screenshot if desired -->
+        </div>
+      </div>
+
+      <!-- Other Display Options -->
+      <div class="menu-section">
+        <h4>View Options</h4>
+        <div class="option-item interactive">
+          <span>Night Mode</span>
+          <label class="switch" title="Toggle Night Mode">
+            <input type="checkbox" id="toggle-night-mode">
+            <span class="slider round"></span>
+          </label>
+        </div>
+        <div class="option-item interactive">
+          <span>Enable Moving Map</span>
+          <label class="switch" title="Toggle Moving Map">
+            <input type="checkbox" id="toggle-moving-map">
+            <span class="slider round"></span>
+          </label>
+        </div>
+        <label style="margin-top: 1em;"><input type="checkbox" id="show-graticule"> Show Grid</label>
+        <label><input type="checkbox" id="show-grid-dots"> Show Grid Dots</label>
+        <label><input type="checkbox" id="outline-only"> Land Outline Only</label>
+        <label><input type="checkbox" id="show-labels"> Show Labels</label>
+      </div>
+
     </div>
   </div>
 
   <!-- Overlays Panel -->
   <div id="overlays-panel" class="sidebar-content-panel">
-    <h3>Data Overlays</h3>
-    <div class="menu-section">
-      <div class="overlay-row">
-        <div class="overlay-label">Overlay:</div>
-        <div class="overlay-value">
-          <select id="overlay-type" class="overlay-selector">
-            <option value="none">None</option>
-            <option value="magvar">Magnetic Variation</option>
-            <option value="temperature">Temperature</option>
-            <option value="windspeed">Wind Speed</option>
-            <option value="humidity">Humidity</option>
-          </select>
+    <div class="panel-header">
+      <h3>Data Overlays</h3>
+      <button class="hide-panel-button" title="Hide Panel">✕</button>
+    </div>
+    <div class="panel-inner-content">
+      <!-- Existing Overlay Controls -->
+      <div class="menu-section">
+        <div class="overlay-row"> <!-- Keep these as rows -->
+          <div class="overlay-label">Data Type:</div>
+          <div class="overlay-value">
+            <select id="overlay-type" class="overlay-selector">
+              <option value="none">None</option>
+              <option value="magvar">Magnetic Variation</option>
+              <option value="temperature">Temperature</option>
+              <option value="windspeed">Wind Speed</option>
+              <option value="humidity">Humidity</option>
+            </select>
+          </div>
+        </div>
+        <div class="overlay-row">
+          <div class="overlay-label">Mode:</div>
+          <div class="overlay-value">
+            <button id="mode-gradient" class="display-mode-btn">Gradient</button>
+            <button id="mode-vector" class="display-mode-btn">Vector</button>
+            <button id="mode-isoline" class="display-mode-btn active">Isoline</button>
+          </div>
+        </div>
+        <div class="overlay-row">
+          <div class="overlay-label">Altitude:</div>
+          <div class="overlay-value">
+            <input type="range" id="height-level" min="0" max="10" value="0">
+            <span id="height-value">0 km</span>
+          </div>
         </div>
       </div>
-      <div class="overlay-row">
-        <div class="overlay-label">Mode:</div>
-        <div class="overlay-value">
-          <button id="mode-gradient" class="display-mode-btn">Gradient</button>
-          <button id="mode-vector" class="display-mode-btn">Vector</button>
-          <button id="mode-isoline" class="display-mode-btn active">Isoline</button>
-        </div>
+      <div class="menu-section">
+        <h3>Overlay Settings</h3>
+        <label>Overlay Opacity</label>
+        <input type="range" id="overlay-opacity" min="0" max="100" value="70">
+        <label>Vector Density</label>
+        <input type="range" id="vector-density" min="1" max="10" value="5">
+        <label>Isoline Spacing</label>
+        <select id="isoline-spacing">
+          <option value="coarse">Coarse</option>
+          <option value="medium" selected>Medium</option>
+          <option value="fine">Fine</option>
+        </select>
       </div>
-      <div class="overlay-row">
-        <div class="overlay-label">Altitude:</div>
-        <div class="overlay-value">
-          <input type="range" id="height-level" min="0" max="10" value="0">
-          <span id="height-value">0 km</span>
+
+      <!-- Traffic Option -->
+      <div class="menu-section">
+        <h4>Traffic</h4>
+        <div class="option-item interactive">
+          <span>Show Online Traffic</span>
+          <label class="switch" title="Toggle Online Traffic">
+            <input type="checkbox" id="toggle-traffic">
+            <span class="slider round"></span>
+          </label>
         </div>
+        <!-- Add Network settings button/link here if needed -->
+        <button class="subtle-button" style="margin-top: 5px;">Network Settings...</button>
       </div>
     </div>
-    <div class="menu-section">
-      <h3>Overlay Settings</h3>
-      <label>Overlay Opacity</label>
-      <input type="range" id="overlay-opacity" min="0" max="100" value="70">
-      <label>Vector Density</label>
-      <input type="range" id="vector-density" min="1" max="10" value="5">
-      <label>Isoline Spacing</label>
-      <select id="isoline-spacing">
-        <option value="coarse">Coarse</option>
-        <option value="medium" selected>Medium</option>
-        <option value="fine">Fine</option>
-      </select>
+  </div>
+
+  <!-- Views Panel -->
+  <div id="views-panel" class="sidebar-content-panel">
+    <div class="panel-header">
+      <h3>Globe Views</h3>
+      <button class="hide-panel-button" title="Hide Panel">✕</button>
+    </div>
+    <div class="panel-inner-content">
+      <div class="menu-section">
+        <h4>Projection</h4>
+        <select id="projection-select">
+          <option value="orthographic">Orthographic</option>
+          <option value="equirectangular">Equirectangular</option>
+          <option value="mercator">Mercator</option>
+          <option value="stereographic">Stereographic</option>
+        </select>
+        <label style="margin-top:1em;">Auto-Rotation Speed</label>
+        <input type="range" id="rotation-speed" min="0" max="20" value="0">
+      </div>
+      <div class="menu-section">
+        <h4>Predefined Views</h4>
+        <div class="btn-group">
+          <button id="view-atlantic">Atlantic</button>
+          <button id="view-pacific">Pacific</button>
+          <button id="view-north-america">N. America</button>
+          <button id="view-south-america">S. America</button>
+          <button id="view-europe">Europe</button>
+          <button id="view-africa">Africa</button>
+          <button id="view-asia">Asia</button>
+          <button id="view-australia">Australia</button>
+        </div>
+      </div>
     </div>
   </div>
 
 
   <!-- Settings Panel -->
   <div id="settings-panel" class="sidebar-content-panel">
-    <h3>Advanced Settings</h3>
-    <div class="menu-section">
-      <h3>Colors</h3>
-      <div>
-        <span>Land:</span>
-        <span class="color-option" style="background-color: #303030;" data-color="#303030"></span>
-        <span class="color-option" style="background-color: #2A9D8F;" data-color="#2A9D8F"></span>
-        <span class="color-option" style="background-color: #72B092;" data-color="#72B092"></span>
-        <span class="color-option" style="background-color: #466B6A;" data-color="#466B6A"></span>
+    <div class="panel-header">
+      <h3>Advanced Settings</h3>
+      <button class="hide-panel-button" title="Hide Panel">✕</button>
+    </div>
+    <div class="panel-inner-content">
+      <div class="menu-section">
+        <h3>Globe Colors</h3>
+        <div>
+          <span>Land:</span>
+          <span class="color-option" style="background-color: #303030;" data-color="#303030"></span>
+          <span class="color-option" style="background-color: #2A9D8F;" data-color="#2A9D8F"></span>
+          <span class="color-option" style="background-color: #72B092;" data-color="#72B092"></span>
+          <span class="color-option" style="background-color: #466B6A;" data-color="#466B6A"></span>
+        </div>
+        <div style="margin-top: 0.5em;">
+          <span>Ocean:</span>
+          <span class="color-option" style="background-color: #181818;" data-color="#181818"></span>
+          <span class="color-option" style="background-color: #183059;" data-color="#183059"></span>
+          <span class="color-option" style="background-color: #001D3D;" data-color="#001D3D"></span>
+          <span class="color-option" style="background-color: #000814;" data-color="#000814"></span>
+        </div>
       </div>
-      <div style="margin-top: 0.5em;">
-        <span>Ocean:</span>
-        <span class="color-option" style="background-color: #181818;" data-color="#181818"></span>
-        <span class="color-option" style="background-color: #183059;" data-color="#183059"></span>
-        <span class="color-option" style="background-color: #001D3D;" data-color="#001D3D"></span>
-        <span class="color-option" style="background-color: #000814;" data-color="#000814"></span>
+      <div class="menu-section">
+        <h3>Grid Settings</h3>
+        <label>Grid Opacity</label>
+        <input type="range" id="grid-opacity" min="0" max="100" value="50">
+        <label>Grid Color</label>
+        <select id="grid-color">
+          <option value="#555555">Gray</option>
+          <option value="#AAAAAA">Light Gray</option>
+          <option value="#FFFFFF">White</option>
+          <option value="#3388BB">Blue</option>
+        </select>
       </div>
     </div>
   </div>
 
   <!-- About Panel -->
   <div id="about-panel" class="sidebar-content-panel">
-    <h3>About</h3>
-    <p>
-      Interactive WGS84 Globe<br>
-      Data: Natural Earth, WMM 2025<br>
-      Source: <span id="data-source-info">Loading...</span> | <span id="data-source-timestamp">Timestamp</span><br>
-      Inspired by <a href="https://github.com/cambecc/earth" target="_blank" style="color: #69c; text-decoration: none;">cambecc/earth</a>.
-    </p>
+    <div class="panel-header">
+      <h3>About</h3>
+      <button class="hide-panel-button" title="Hide Panel">✕</button>
+    </div>
+    <div class="panel-inner-content">
+      <p>
+        Interactive WGS84 Globe<br>
+        Data: Natural Earth, WMM 2025<br>
+        Source: <span id="data-source-info">Loading...</span> | <span id="data-source-timestamp">Timestamp</span><br>
+        Inspired by <a href="https://github.com/cambecc/earth" target="_blank" style="color: #69c; text-decoration: none;">cambecc/earth</a>.
+      </p>
+    </div>
   </div>
 
 </div>
@@ -217,8 +391,8 @@
 <!-- Load the main application module -->
 <script type="module" src="js/app.js"></script>
 
-<!-- Add UI Interaction Script (Needs to be created/updated) -->
-<script src="js/sidebar-ui.js"></script> <!-- You'll need to create this -->
+<!-- Add UI Interaction Script -->
+<script src="js/sidebar-ui.js"></script>
 
 </body>
 </html>

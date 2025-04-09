@@ -3,58 +3,139 @@
 function initializeSidebarInteractions() {
     const sidebarItems = document.querySelectorAll('.sidebar-item');
     const contentPanels = document.querySelectorAll('.sidebar-content-panel');
+    const hideButtons = document.querySelectorAll('.hide-panel-button');
+    const toggleTopBarButton = document.getElementById('toggle-top-bar');
+    const toggleWidgetPanelButton = document.getElementById('toggle-widget-panel');
+    const bodyElement = document.body; // Still needed for top-bar toggle
 
+    let lastOpenedPanelId = null;
+    const defaultPanelId = 'search-panel';
+
+    // --- DOM Element Checks ---
     if (!sidebarItems.length || !contentPanels.length) {
-        console.error("Sidebar items or content panels not found.");
-        return;
+        console.error("Sidebar items or content panels not found."); return;
+    }
+    if (!toggleTopBarButton) console.warn("Top bar toggle button not found.");
+    if (!toggleWidgetPanelButton) console.warn("Widget panel toggle button (#toggle-widget-panel) not found.");
+
+
+    // --- Helper Functions ---
+
+    function setActiveWidgetButtonState(isActive) {
+        if (toggleWidgetPanelButton) {
+            toggleWidgetPanelButton.classList.toggle('active', isActive);
+        }
     }
 
+    function hideActivePanel() {
+        const activeItem = document.querySelector('.sidebar-item.active');
+        const visiblePanel = document.querySelector('.sidebar-content-panel.visible');
+
+        if (activeItem) activeItem.classList.remove('active');
+        if (visiblePanel) visiblePanel.classList.remove('visible');
+        // bodyElement.classList.remove('panel-visible'); // <-- REMOVED
+        setActiveWidgetButtonState(false);
+        console.log("Panel hidden.");
+    }
+
+    function showPanel(targetPanelId) {
+        const targetPanel = document.getElementById(targetPanelId);
+        if (!targetPanel) {
+            console.warn(`Target panel with ID "${targetPanelId}" not found.`);
+            return;
+        }
+        const targetSidebarItem = document.querySelector(`.sidebar-item[data-panel="${targetPanelId}"]`);
+
+        // Deactivate previous items/panels
+        sidebarItems.forEach(i => i.classList.remove('active'));
+        contentPanels.forEach(panel => panel.classList.remove('visible'));
+
+        // Activate target item/panel
+        if (targetSidebarItem) targetSidebarItem.classList.add('active');
+        targetPanel.classList.add('visible');
+        // bodyElement.classList.add('panel-visible'); // <-- REMOVED
+        setActiveWidgetButtonState(true);
+
+        console.log(`Panel shown: ${targetPanelId}`);
+    }
+
+    // --- Event Listeners ---
+
+    // Sidebar Item Clicks
     sidebarItems.forEach(item => {
         item.addEventListener('click', () => {
-            const targetPanelId = item.dataset.panel; // Get the ID from data-panel attribute
-            if (!targetPanelId) {
-                console.warn("Sidebar item clicked has no data-panel attribute:", item);
-                return;
+            const targetPanelId = item.dataset.panel;
+            if (!targetPanelId) return;
+            const isAlreadyActive = item.classList.contains('active');
+            if (isAlreadyActive) {
+                hideActivePanel();
+            } else {
+                lastOpenedPanelId = targetPanelId; // Still useful for widget toggle
+                showPanel(targetPanelId);
             }
-
-            const targetPanel = document.getElementById(targetPanelId);
-
-            if (!targetPanel) {
-                console.warn(`Target panel with ID "${targetPanelId}" not found.`);
-                return;
-            }
-
-            // 1. Update Active State for Sidebar Items
-            sidebarItems.forEach(i => i.classList.remove('active'));
-            item.classList.add('active');
-
-            // 2. Update Visibility for Content Panels
-            contentPanels.forEach(panel => {
-                if (panel.id === targetPanelId) {
-                    panel.classList.add('visible');
-                } else {
-                    panel.classList.remove('visible');
-                }
-            });
         });
     });
 
-    // Optional: Ensure the initial state is correct (though HTML should handle it)
-    // const initialActiveItem = document.querySelector('.sidebar-item.active');
-    // const initialVisiblePanel = document.querySelector('.sidebar-content-panel.visible');
-    // if (initialActiveItem && !initialVisiblePanel) {
-    //     const initialPanelId = initialActiveItem.dataset.panel;
-    //     const panelToShow = document.getElementById(initialPanelId);
-    //     if (panelToShow) panelToShow.classList.add('visible');
-    // } else if (!initialActiveItem && initialVisiblePanel) {
-    //     // This case is less likely if HTML is set up correctly
-    //     initialVisiblePanel.classList.remove('visible');
-    // }
+    // Hide Button (X) Clicks
+    hideButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            hideActivePanel();
+        });
+    });
 
-    console.log("Sidebar interactions initialized.");
+    // Top Bar Toggle Click
+    if (toggleTopBarButton) {
+        toggleTopBarButton.addEventListener('click', () => {
+            bodyElement.classList.toggle('top-bar-hidden');
+            console.log(`Top bar hidden: ${bodyElement.classList.contains('top-bar-hidden')}`);
+            // setTimeout(() => window.dispatchEvent(new Event('resize')), 50); // Keep resize trigger if needed
+        });
+    }
+
+    // Widget Panel Toggle Button Click (#toggle-widget-panel)
+    if (toggleWidgetPanelButton) {
+        toggleWidgetPanelButton.addEventListener('click', () => {
+            // Check visibility based on panel's class, not body class
+            const isPanelVisible = document.querySelector('.sidebar-content-panel.visible');
+
+            if (isPanelVisible) {
+                hideActivePanel();
+            } else {
+                const panelToShow = lastOpenedPanelId || defaultPanelId;
+                const itemToActivate = document.querySelector(`.sidebar-item[data-panel="${panelToShow}"]`);
+                if (itemToActivate) {
+                    showPanel(panelToShow); // Handles activating item and button
+                } else {
+                    console.warn(`Cannot open panel: Sidebar item for panel ID "${panelToShow}" not found.`);
+                }
+            }
+        });
+    }
+
+
+    // --- Initial State Check ---
+    const initiallyVisiblePanel = document.querySelector('.sidebar-content-panel.visible');
+    const initiallyActiveItem = document.querySelector('.sidebar-item.active');
+
+    if (initiallyVisiblePanel && initiallyActiveItem) {
+        // bodyElement.classList.add('panel-visible'); // <-- REMOVED
+        setActiveWidgetButtonState(true);
+        lastOpenedPanelId = initiallyVisiblePanel.id;
+        if (initiallyActiveItem.dataset.panel !== initiallyVisiblePanel.id) {
+            console.warn("Initial active item and visible panel mismatch.");
+            // Correct state if needed
+        }
+    } else {
+        // bodyElement.classList.remove('panel-visible'); // <-- REMOVED
+        setActiveWidgetButtonState(false);
+        if(initiallyActiveItem) initiallyActiveItem.classList.remove('active');
+        if(initiallyVisiblePanel) initiallyVisiblePanel.classList.remove('visible');
+    }
+
+    // Initial top bar state
+    // bodyElement.classList.remove('top-bar-hidden'); // Default visible
+
+    console.log("Sidebar interactions initialized (Overlay Panel).");
 }
 
-// Initialize when the DOM is ready
 document.addEventListener('DOMContentLoaded', initializeSidebarInteractions);
-
-// Note: No need to export anything unless called from another module
