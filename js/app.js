@@ -1,6 +1,6 @@
 // js/app.js
 import { config } from './config.js';
-import { loadAllData } from './data.js'; // updateDataSourceInfo is called within data.js now
+import { loadAllData, dataAvailable } from './data.js'; // Import dataAvailable
 import { initializeRenderer, renderGlobe } from './renderer.js';
 import { initializeUI } from './ui.js';
 
@@ -14,7 +14,7 @@ const INTRO_START_ROTATION = [-75, 25, 0];
 const appState = {
     currentScale: config.defaultScale,
     currentRotation: [...config.initialRotation],
-    worldData: null,
+    // No longer store worldData directly here, renderer selects based on scale
     isAnimating: false,
     autoRotateTimer: null,
 };
@@ -65,8 +65,6 @@ function normalizeLongitude(lon) {
     return (lon + 540) % 360 - 180;
 }
 
-// REMOVED: updateFooterTimestamp() - handled via About panel now
-
 /**
  * Creates the SVG container and core groups for the globe.
  */
@@ -100,19 +98,18 @@ function setupSvg() {
  * @param {boolean} isError - Whether the message is an error message.
  */
 function showLoadingMessage(message, isError = false) {
-    // Ensure SVG exists before trying to append
     if (!svg) {
         console.warn("SVG not ready for loading message.");
         return;
     }
     if (!loadingText) {
         loadingText = svg.append('text')
-            .attr('class', 'loading-text') // Class for styling
+            .attr('class', 'loading-text')
             .attr('x', config.width / 2)
             .attr('y', config.height / 2)
             .attr('text-anchor', 'middle')
-            .attr('dy', '0.35em') // Vertical centering
-            .attr('fill', isError ? '#ff8888' : config['--navigraph-text-primary'] || '#ffffff'); // Use CSS variable if possible
+            .attr('dy', '0.35em')
+            .attr('fill', isError ? '#ff8888' : config['--navigraph-text-primary'] || '#ffffff');
     }
     loadingText.text(message).attr('fill', isError ? '#ff8888' : config['--navigraph-text-primary'] || '#ffffff');
     loadingText.style('display', 'block');
@@ -137,8 +134,13 @@ function scheduleRender(forceRedraw = false) {
         cancelAnimationFrame(renderRequestId);
     }
     renderRequestId = requestAnimationFrame(() => {
-        if (appState.worldData) {
-            renderGlobe(appState.worldData, appState.currentScale, appState.currentRotation);
+        // Check if at least low-res land data is available before rendering
+        if (dataAvailable.landLowRes) {
+            // Pass scale and rotation, renderer selects data internally
+            renderGlobe(appState.currentScale, appState.currentRotation);
+        } else {
+            console.warn("Attempted to render before land data was available.");
+            // Optionally show a message or render a blank state
         }
         renderRequestId = null;
     });
@@ -156,23 +158,19 @@ function startIntroAnimation() {
         .tween("rotate", () => {
             const r = d3.interpolate(INTRO_START_ROTATION, config.initialRotation);
             return (t) => {
-                // Check if tween is still valid (might be interrupted)
                 if (!appState.isAnimating) return;
                 updateRotation(r(t));
-                scheduleRender(true); // Force render during animation tween
+                scheduleRender(true); // Force render during animation
             };
         })
         .on("end", () => {
             updateAnimating(false);
-            // Re-render one last time to ensure final state
-            scheduleRender(true);
+            scheduleRender(true); // Final render
             if (config.rotationSpeed > 0) startStopAutoRotate(true);
         })
         .on("interrupt", () => {
-            // Ensure animating flag is false if interrupted
             updateAnimating(false);
-            // Re-render to reflect the interrupted state
-            scheduleRender(true);
+            scheduleRender(true); // Render interrupted state
         });
 }
 
@@ -186,21 +184,11 @@ function navigateTo(targetLon, targetLat) {
     if (appState.isAnimating) return;
     startStopAutoRotate(false); // Stop rotation during navigation
 
-    const currentProj = config.projection; // Get current projection
     const startRotation = [...appState.currentRotation];
-
-    // Normalize target longitude
     const normTargetLon = normalizeLongitude(targetLon);
-
-    // For non-orthographic views, rotation might behave differently.
-    // Simple approach: Just set rotation directly for 2D maps?
-    // Or tween longitude only? Let's stick with the 3D-like tween for consistency.
-
-    // Calculate shortest path for longitude
     let deltaLon = normTargetLon - startRotation[0];
     if (deltaLon > 180) deltaLon -= 360;
     if (deltaLon < -180) deltaLon += 360;
-
     const targetRotation = [startRotation[0] + deltaLon, targetLat, startRotation[2]]; // Keep roll
 
     updateAnimating(true);
@@ -211,9 +199,8 @@ function navigateTo(targetLon, targetLat) {
         .tween("navigate", () => {
             const rInterpolate = d3.interpolate(startRotation, targetRotation);
             return (t) => {
-                if (!appState.isAnimating) return; // Check if interrupted
+                if (!appState.isAnimating) return;
                 const current = rInterpolate(t);
-                // Normalize longitude during interpolation
                 current[0] = normalizeLongitude(current[0]);
                 updateRotation(current);
                 scheduleRender(true); // Force render during animation
@@ -221,15 +208,14 @@ function navigateTo(targetLon, targetLat) {
         })
         .on("end", () => {
             updateAnimating(false);
-            // Ensure final rotation is exactly the target (normalized)
             updateRotation([normTargetLon, targetLat, startRotation[2]]);
-            scheduleRender(true); // Render final state
-            if (config.rotationSpeed > 0) startStopAutoRotate(true); // Restart autorotate if needed
+            scheduleRender(true); // Final render
+            if (config.rotationSpeed > 0) startStopAutoRotate(true);
         })
         .on("interrupt", () => {
             updateAnimating(false);
             scheduleRender(true); // Render interrupted state
-            if (config.rotationSpeed > 0) startStopAutoRotate(true); // Restart autorotate if needed
+            if (config.rotationSpeed > 0) startStopAutoRotate(true);
         });
 }
 
@@ -244,35 +230,27 @@ function startStopAutoRotate(start) {
         updateAutoRotateTimer(null);
     }
 
-    // Update config state based on request and speed setting
     config.autoRotate = start && config.rotationSpeed > 0;
 
     if (!config.autoRotate) {
-        // console.log("Auto-rotate stopped.");
         return;
     }
 
-    // console.log(`Auto-rotate starting with speed: ${config.rotationSpeed}`);
     updateAutoRotateTimer(setInterval(() => {
-        // Double-check conditions inside interval
         if (appState.isAnimating || !config.autoRotate || config.rotationSpeed <= 0) {
-            // Stop interval if conditions aren't met anymore
             if (appState.autoRotateTimer) {
                 clearInterval(appState.autoRotateTimer);
                 updateAutoRotateTimer(null);
-                // console.log("Auto-rotate stopped by interval check.");
             }
             return;
         }
 
         const rotation = [...appState.currentRotation];
-        const speedFactor = config.rotationSpeed / 50; // Adjust speed scaling if needed
-
+        const speedFactor = config.rotationSpeed / 50;
         rotation[0] += speedFactor;
-        rotation[0] = normalizeLongitude(rotation[0]); // Keep longitude in range
-
+        rotation[0] = normalizeLongitude(rotation[0]);
         updateRotation(rotation);
-        scheduleRender(false); // Regular render is sufficient
+        scheduleRender(false); // No need to force render
     }, AUTOROTATE_INTERVAL));
 }
 
@@ -280,21 +258,15 @@ function startStopAutoRotate(start) {
  * Adjusts globe size and projection center on window resize.
  */
 function handleResize() {
-    // Update config dimensions (might not be strictly needed if using SVG viewBox)
     config.width = window.innerWidth - 60; // Adjust for sidebar
     config.height = window.innerHeight;
 
     if (svg) {
-        // Update SVG viewbox if its size changes relative to window
-        // The '100%' width/height with viewBox should handle most cases,
-        // but explicit update might be needed for complex scenarios.
-        // svg.attr('viewBox', `0 0 ${config.width} ${config.height}`); // Re-apply viewBox
-
-        // Recenter the globe group within the new SVG size/viewBox
-        // Center calculation needs config.width/height which represent the *viewBox* dimensions
+        // Update SVG viewbox to reflect new aspect ratio
+        svg.attr('viewBox', `0 0 ${config.width} ${config.height}`);
+        // Recenter the globe group
         globeGroup.attr('transform', `translate(${config.width / 2}, ${config.height / 2})`);
-
-        // Re-render the globe with potentially new dimensions affecting projection
+        // Re-render the globe
         scheduleRender(true);
     }
 }
@@ -311,16 +283,16 @@ function init() {
     config.height = window.innerHeight;
 
     setupSvg(); // Setup SVG first
-    showLoadingMessage('Loading Earth Data...'); // Show loading message on SVG
+    showLoadingMessage('Loading Earth Data...'); // Show loading message
 
     initializeRenderer(svg, globeGroup, earthBoundary, overlayGroup);
 
-    // Initialize UI controls (event listeners for buttons, sliders etc. inside panels)
+    // Pass the correct callbacks, including those needed by zoom/drag
     initializeUI(svg, appState, {
         scheduleRender,
         navigateTo,
         updateRotation,
-        updateScale,
+        updateScale, // Pass updateScale for zoom handler
         startStopAutoRotate
     });
 
@@ -329,20 +301,20 @@ function init() {
 
     // Load data
     loadAllData()
-        .then(loadedWorldData => {
-            if (loadedWorldData) {
-                appState.worldData = loadedWorldData;
+        .then(initialDataAvailable => {
+            // loadAllData now returns a boolean indicating if low-res land is loaded
+            if (initialDataAvailable) {
                 hideLoadingMessage();
-                scheduleRender(true); // Initial render
-                startIntroAnimation(); // Start animation after initial render
+                scheduleRender(true); // Initial render uses low-res data
+                startIntroAnimation(); // Start animation
             } else {
-                throw new Error("World data loading failed or returned empty.");
+                throw new Error("Essential low-resolution land data failed to load.");
             }
         })
         .catch(error => {
             console.error("Failed to initialize application:", error);
-            hideLoadingMessage(); // Hide 'Loading...' message
-            showLoadingMessage('Error loading data. Please refresh.', true); // Show error
+            hideLoadingMessage();
+            showLoadingMessage('Error loading data. Please refresh.', true);
         });
 }
 

@@ -2,6 +2,7 @@
 import { config } from './config.js';
 import { screenToLonLat } from './wgs84.js'; // Assuming screenToLonLat handles projections correctly
 import { formatOverlayValue, getOverlayValue } from './overlayUtils.js'; // For tooltip data
+import { getCurrentDecimalYear } from './wmm.js'; // Import for date handling
 
 let svg, appState, callbacks;
 let isDragging = false;
@@ -26,8 +27,12 @@ export function initializeUI(_svg, _appState, _callbacks) {
     // Setup event listeners for the globe SVG (dragging, zooming, tooltip)
     setupGlobeInteractionListeners();
 
-    // Setup event listeners for controls INSIDE the panels
+    // Setup event listeners for controls INSIDE the panels and top bar
     setupPanelControlListeners();
+    setupTopBarListeners();
+
+    // Set initial theme based on config.nightMode
+    applyTheme(config.nightMode);
 
     console.log("Base UI initialized.");
 }
@@ -39,158 +44,128 @@ function setupGlobeInteractionListeners() {
     }
     // Mouse events for dragging
     svg.on('mousedown', handleMouseDown);
-    svg.on('mousemove', handleDragMove); // Renamed for clarity
+    svg.on('mousemove', handleDragMove);
     svg.on('mouseup', handleMouseUp);
-    svg.on('mouseleave', handleMouseLeave); // Use mouseleave to stop drag if pointer leaves SVG
+    svg.on('mouseleave', handleMouseLeave);
 
     // Mouse events for tooltip
-    svg.on('mousemove.tooltip', handleTooltipMove); // Use namespaced event
-    svg.on('mouseout.tooltip', handleTooltipOut); // Use namespaced event
+    svg.on('mousemove.tooltip', handleTooltipMove);
+    svg.on('mouseout.tooltip', handleTooltipOut);
 
     // Touch events for dragging
-    svg.on('touchstart', handleTouchStart, { passive: false }); // passive:false to allow preventDefault
-    svg.on('touchmove', handleTouchMove, { passive: false }); // passive:false to allow preventDefault
+    svg.on('touchstart', handleTouchStart, { passive: false });
+    svg.on('touchmove', handleTouchMove, { passive: false });
     svg.on('touchend', handleTouchEnd);
     svg.on('touchcancel', handleTouchEnd);
 
     // Zoom events
-    svg.on('wheel', handleWheel, { passive: false }); // passive:false to allow preventDefault
+    svg.on('wheel', handleWheel, { passive: false });
+}
+
+// Helper to apply theme colors
+function applyTheme(isNight) {
+    const theme = isNight ? config.themes.dark : config.themes.light;
+    config.landColor = theme.landColor;
+    config.oceanColor = theme.oceanColor;
+    config.landStrokeColor = theme.landStrokeColor;
+    console.log(`UI: Applied ${isNight ? 'Dark' : 'Light'} Theme`);
+
+    document.body.classList.toggle('night-mode', isNight);
+    document.body.classList.toggle('light-mode', !isNight);
+
+    if (callbacks && callbacks.scheduleRender) {
+        callbacks.scheduleRender(true); // Force render after theme change
+    }
+}
+
+// Helper to add listeners to checkboxes/toggles and link to config
+function setupToggle(elementId, configKey, renderOnChange = false, customCallback = null) {
+    const element = document.getElementById(elementId);
+    if (element) {
+        if (config.hasOwnProperty(configKey)) {
+            element.checked = config[configKey]; // Set initial state
+            element.addEventListener('change', () => {
+                const newValue = element.checked;
+                config[configKey] = newValue;
+                console.log(`UI Toggle: ${configKey} set to ${config[configKey]}`);
+
+                if (customCallback) {
+                    customCallback(newValue); // Execute custom logic
+                }
+
+                // Trigger render if flag is set AND no custom callback handles it
+                if (renderOnChange && !customCallback && callbacks && callbacks.scheduleRender) {
+                    callbacks.scheduleRender(true);
+                }
+
+                if (configKey === 'overlayType') { // Handle overlay visibility
+                    updateOverlayControlsVisibility();
+                }
+            });
+        } else {
+            console.warn(`Config key '${configKey}' not found for toggle element '#${elementId}'. Hiding element.`);
+            element.style.display = 'none';
+            const parentContainer = element.closest('.layer-item, .option-item, .overlay-option-item');
+            if (parentContainer) parentContainer.style.display = 'none';
+        }
+    } else {
+        // console.warn(`Toggle element '#${elementId}' not found.`);
+    }
+    return element;
 }
 
 
 function setupPanelControlListeners() {
     console.log("Setting up panel control listeners...");
 
-    // --- Display Panel Controls ---
-    const showGraticuleCheckbox = document.getElementById('show-graticule');
-    if (showGraticuleCheckbox) {
-        showGraticuleCheckbox.checked = config.showGraticule; // Set initial state
-        showGraticuleCheckbox.addEventListener('change', () => {
-            config.showGraticule = showGraticuleCheckbox.checked;
+    // --- Search Panel ---
+    const searchInput = document.querySelector('#search-panel input[type="text"]');
+    if(searchInput) {
+        searchInput.addEventListener('change', (event) => { /* ... Search logic ... */ });
+        searchInput.addEventListener('keydown', (event) => { if (event.key === 'Enter') { /* ... Search logic ... */ } });
+    } else console.warn("Search input not found in #search-panel");
+
+    // --- Display Panel ---
+    setupToggle('toggle-layer-airports', 'showAirports', true);
+    setupToggle('toggle-layer-airspace', 'showAirspaces', true);
+    setupToggle('toggle-night-mode', 'nightMode', false, applyTheme);
+    setupToggle('toggle-moving-map', 'movingMap', false);
+    setupToggle('show-graticule', 'showGraticule', true);
+    setupToggle('outline-only', 'outlineOnly', true);
+
+    // --- Overlays Panel ---
+    const magVarToggle = document.getElementById('toggle-magvar-overlay');
+    if (magVarToggle) {
+        magVarToggle.checked = (config.overlayType === 'magvar');
+        magVarToggle.addEventListener('change', () => {
+            config.overlayType = magVarToggle.checked ? 'magvar' : 'none';
+            console.log(`Overlay Type changed to: ${config.overlayType}`);
+            updateOverlayControlsVisibility();
             callbacks.scheduleRender(true);
         });
-    } else console.warn("Checkbox 'show-graticule' not found.");
+    } else {
+        console.warn("Overlay toggle '#toggle-magvar-overlay' not found.");
+    }
 
-    const showGridDotsCheckbox = document.getElementById('show-grid-dots');
-    if (showGridDotsCheckbox) {
-        showGridDotsCheckbox.checked = config.showGridDots;
-        showGridDotsCheckbox.addEventListener('change', () => {
-            config.showGridDots = showGridDotsCheckbox.checked;
-            callbacks.scheduleRender(true);
-        });
-    } else console.warn("Checkbox 'show-grid-dots' not found.");
-
-    const outlineOnlyCheckbox = document.getElementById('outline-only');
-    if (outlineOnlyCheckbox) {
-        outlineOnlyCheckbox.checked = config.outlineOnly;
-        outlineOnlyCheckbox.addEventListener('change', () => {
-            config.outlineOnly = outlineOnlyCheckbox.checked;
-            callbacks.scheduleRender(true);
-        });
-    } else console.warn("Checkbox 'outline-only' not found.");
-
-    const showLabelsCheckbox = document.getElementById('show-labels');
-    if (showLabelsCheckbox) {
-        showLabelsCheckbox.checked = config.showLabels;
-        showLabelsCheckbox.addEventListener('change', () => {
-            config.showLabels = showLabelsCheckbox.checked;
-            callbacks.scheduleRender(true);
-        });
-    } else console.warn("Checkbox 'show-labels' not found.");
-
-
-    const projectionSelect = document.getElementById('projection-select');
-    if (projectionSelect) {
-        projectionSelect.value = config.projection;
-        projectionSelect.addEventListener('change', () => {
-            config.projection = projectionSelect.value;
-            callbacks.scheduleRender(true); // Force redraw needed for projection change
-        });
-    } else console.warn("Select 'projection-select' not found.");
-
-
-    const rotationSpeedSlider = document.getElementById('rotation-speed');
-    if (rotationSpeedSlider) {
-        rotationSpeedSlider.value = config.rotationSpeed;
-        rotationSpeedSlider.addEventListener('input', () => {
-            config.rotationSpeed = parseFloat(rotationSpeedSlider.value);
-            // Only start/stop if the control initiated the change
-            callbacks.startStopAutoRotate(config.rotationSpeed > 0);
-        });
-    } else console.warn("Slider 'rotation-speed' not found.");
-
-    const gridOpacitySlider = document.getElementById('grid-opacity');
-    if(gridOpacitySlider) {
-        gridOpacitySlider.value = config.graticuleOpacity * 100;
-        gridOpacitySlider.addEventListener('input', () => {
-            config.graticuleOpacity = parseFloat(gridOpacitySlider.value) / 100;
-            callbacks.scheduleRender(true); // Redraw needed
-        });
-    } else console.warn("Slider 'grid-opacity' not found.");
-
-    const gridColorSelect = document.getElementById('grid-color');
-    if(gridColorSelect) {
-        gridColorSelect.value = config.graticuleColor;
-        gridColorSelect.addEventListener('change', () => {
-            config.graticuleColor = gridColorSelect.value;
-            callbacks.scheduleRender(true); // Redraw needed
-        });
-    } else console.warn("Select 'grid-color' not found.");
-
-
-    // --- Views Panel Controls ---
-    const viewButtons = document.querySelectorAll('#views-panel .btn-group button');
-    if (viewButtons.length > 0) {
-        viewButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                const view = button.id.replace('view-', '');
-                // Use a map for cleaner navigation targets
-                const viewTargets = {
-                    'atlantic': [-30, 30], 'pacific': [-170, 0], // Adjusted Pacific to be less on edge
-                    'north-america': [-100, 40], 'south-america': [-60, -20],
-                    'europe': [15, 50], 'africa': [20, 0],
-                    'asia': [90, 40], 'australia': [135, -25] // Adjusted Asia center
-                };
-                if (viewTargets[view]) {
-                    callbacks.navigateTo(...viewTargets[view]);
-                }
-            });
-        });
-    } else console.warn("View buttons not found in #views-panel.");
-
-
-    // --- Overlays Panel Controls ---
-    const overlayTypeSelect = document.getElementById('overlay-type');
-    if (overlayTypeSelect) {
-        overlayTypeSelect.value = config.overlayType;
-        overlayTypeSelect.addEventListener('change', () => {
-            config.overlayType = overlayTypeSelect.value;
-            callbacks.scheduleRender(true);
-        });
-    } else console.warn("Select 'overlay-type' not found.");
-
-    // Display mode buttons
     const modeButtons = {
-        gradient: document.getElementById('mode-gradient'),
         vector: document.getElementById('mode-vector'),
         isoline: document.getElementById('mode-isoline')
     };
-    // Function to update active state for mode buttons
     const updateModeButtons = (activeMode) => {
         for (const mode in modeButtons) {
             if (modeButtons[mode]) {
                 modeButtons[mode].classList.toggle('active', mode === activeMode);
             }
         }
+        updateOverlayControlsVisibility();
     };
-    // Set initial active button
     if (modeButtons[config.displayMode]) updateModeButtons(config.displayMode);
-    // Add listeners
     for (const mode in modeButtons) {
         if (modeButtons[mode]) {
             modeButtons[mode].addEventListener('click', () => {
                 config.displayMode = mode;
                 updateModeButtons(mode);
+                console.log(`Display Mode changed to: ${config.displayMode}`);
                 callbacks.scheduleRender(true);
             });
         } else console.warn(`Mode button for '${mode}' not found.`);
@@ -199,16 +174,39 @@ function setupPanelControlListeners() {
     const heightLevelSlider = document.getElementById('height-level');
     const heightValueSpan = document.getElementById('height-value');
     if (heightLevelSlider && heightValueSpan) {
+        heightLevelSlider.max = config.maxAltitudeKm;
         heightLevelSlider.value = config.altitudeKm;
-        heightValueSpan.textContent = `${config.altitudeKm} km`; // Set initial text
+        heightValueSpan.textContent = `${config.altitudeKm} km`;
         heightLevelSlider.addEventListener('input', () => {
             config.altitudeKm = parseFloat(heightLevelSlider.value);
             heightValueSpan.textContent = `${config.altitudeKm} km`;
-            callbacks.scheduleRender(true);
+            if(callbacks.scheduleRender) { clearTimeout(appState.renderTimeout); appState.renderTimeout = setTimeout(() => callbacks.scheduleRender(true), 50); }
         });
     } else {
         if(!heightLevelSlider) console.warn("Slider 'height-level' not found.");
         if(!heightValueSpan) console.warn("Span 'height-value' not found.");
+    }
+
+    if (!config.hasOwnProperty('decimalYear') || config.decimalYear === null) {
+        config.decimalYear = getCurrentDecimalYear();
+    }
+    const dateInput = document.getElementById('date-year');
+    const dateValueSpan = document.getElementById('date-value');
+    if (dateInput && dateValueSpan) {
+        const currentYear = new Date().getFullYear();
+        dateInput.min = Math.min(2020, Math.floor(config.decimalYear));
+        dateInput.max = Math.max(currentYear + 5, Math.ceil(config.decimalYear));
+        dateInput.step = 0.1;
+        dateInput.value = config.decimalYear.toFixed(1);
+        dateValueSpan.textContent = config.decimalYear.toFixed(1);
+        dateInput.addEventListener('input', () => {
+            config.decimalYear = parseFloat(dateInput.value);
+            dateValueSpan.textContent = config.decimalYear.toFixed(1);
+            if(callbacks.scheduleRender) { clearTimeout(appState.renderTimeout); appState.renderTimeout = setTimeout(() => callbacks.scheduleRender(true), 50); }
+        });
+    } else {
+        if(!dateInput) console.warn("Input '#date-year' not found.");
+        if(!dateValueSpan) console.warn("Span '#date-value' not found.");
     }
 
     const overlayOpacitySlider = document.getElementById('overlay-opacity');
@@ -216,9 +214,7 @@ function setupPanelControlListeners() {
         overlayOpacitySlider.value = config.overlayOpacity * 100;
         overlayOpacitySlider.addEventListener('input', () => {
             config.overlayOpacity = parseFloat(overlayOpacitySlider.value) / 100;
-            // Note: Opacity is handled directly on the overlay group in renderer,
-            // but scheduleRender ensures it redraws with the new config value used.
-            callbacks.scheduleRender(true);
+            if(overlayGroup) overlayGroup.style('opacity', config.overlayOpacity);
         });
     } else console.warn("Slider 'overlay-opacity' not found.");
 
@@ -227,7 +223,7 @@ function setupPanelControlListeners() {
         vectorDensitySlider.value = config.vectorDensity;
         vectorDensitySlider.addEventListener('input', () => {
             config.vectorDensity = parseFloat(vectorDensitySlider.value);
-            callbacks.scheduleRender(true); // Redraw needed for vector overlay
+            if(callbacks.scheduleRender) { clearTimeout(appState.renderTimeout); appState.renderTimeout = setTimeout(() => callbacks.scheduleRender(true), 50); }
         });
     } else console.warn("Slider 'vector-density' not found.");
 
@@ -236,132 +232,183 @@ function setupPanelControlListeners() {
         isolineSpacingSelect.value = config.isolineSpacing;
         isolineSpacingSelect.addEventListener('change', () => {
             config.isolineSpacing = isolineSpacingSelect.value;
-            callbacks.scheduleRender(true); // Redraw needed for isoline overlay
+            callbacks.scheduleRender(true);
         });
     } else console.warn("Select 'isoline-spacing' not found.");
 
+    updateOverlayControlsVisibility();
 
-    // --- Settings Panel Controls ---
-    const colorOptions = document.querySelectorAll('#settings-panel .color-option');
-    if (colorOptions.length > 0) {
-        // Function to update selected state for color options
-        const updateColorSelection = (type, color) => {
-            colorOptions.forEach(opt => {
-                const parentLabel = opt.parentElement?.querySelector('span:first-child')?.textContent || '';
-                if ((type === 'land' && parentLabel === 'Land:') || (type === 'ocean' && parentLabel === 'Ocean:')) {
-                    opt.classList.toggle('selected', opt.dataset.color === color);
-                }
-            });
-        };
-        // Set initial selected state
-        updateColorSelection('land', config.landColor);
-        updateColorSelection('ocean', config.oceanColor);
-        // Add listeners
-        colorOptions.forEach(option => {
-            option.addEventListener('click', () => {
-                const color = option.dataset.color;
-                const parentLabel = option.parentElement?.querySelector('span:first-child')?.textContent || '';
-                if (color) {
-                    if (parentLabel === 'Land:') {
-                        config.landColor = color;
-                        updateColorSelection('land', color);
-                    } else if (parentLabel === 'Ocean:') {
-                        config.oceanColor = color;
-                        updateColorSelection('ocean', color);
-                    }
-                    callbacks.scheduleRender(true); // Force redraw
-                }
+    // --- Views Panel ---
+    const projectionSelect = document.getElementById('projection-select');
+    if (projectionSelect) {
+        projectionSelect.value = config.projection;
+        projectionSelect.addEventListener('change', () => {
+            config.projection = projectionSelect.value;
+            callbacks.scheduleRender(true);
+            if (callbacks.projectionChanged) callbacks.projectionChanged();
+        });
+    } else console.warn("Select 'projection-select' not found.");
+
+    const rotationSpeedSlider = document.getElementById('rotation-speed');
+    if (rotationSpeedSlider) {
+        rotationSpeedSlider.value = config.rotationSpeed;
+        rotationSpeedSlider.addEventListener('input', () => {
+            const speed = parseFloat(rotationSpeedSlider.value);
+            config.rotationSpeed = speed;
+            if (callbacks.startStopAutoRotate) callbacks.startStopAutoRotate(speed > 0);
+        });
+        if (config.rotationSpeed > 0 && callbacks.startStopAutoRotate) { callbacks.startStopAutoRotate(true); }
+    } else console.warn("Slider 'rotation-speed' not found.");
+
+    const viewButtons = document.querySelectorAll('#views-panel .btn-group button');
+    if (viewButtons.length > 0) {
+        viewButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const view = button.id.replace('view-', '');
+                const viewTargets = { 'atlantic': [-30, 30], 'pacific': [-170, 0], 'north-america': [-100, 40], 'south-america': [-60, -20], 'europe': [15, 50], 'africa': [20, 0], 'asia': [90, 40], 'australia': [135, -25] };
+                if (viewTargets[view] && callbacks.navigateTo) { callbacks.navigateTo(...viewTargets[view]); }
             });
         });
-    } else console.warn("Color options not found in #settings-panel.");
+    } else console.warn("View buttons not found in #views-panel.");
 
-    // Add listeners for any other controls in Settings panel if needed...
+    // --- Settings Panel ---
+    const gridOpacitySlider = document.getElementById('grid-opacity');
+    if(gridOpacitySlider) {
+        gridOpacitySlider.value = config.graticuleOpacity * 100;
+        gridOpacitySlider.addEventListener('input', () => {
+            config.graticuleOpacity = parseFloat(gridOpacitySlider.value) / 100;
+            if(callbacks.scheduleRender) { clearTimeout(appState.renderTimeout); appState.renderTimeout = setTimeout(() => callbacks.scheduleRender(true), 50); }
+        });
+    } else console.warn("Slider 'grid-opacity' not found.");
+
+    const gridColorSelect = document.getElementById('grid-color');
+    if(gridColorSelect) {
+        gridColorSelect.value = config.graticuleColor;
+        gridColorSelect.addEventListener('change', () => {
+            config.graticuleColor = gridColorSelect.value;
+            callbacks.scheduleRender(true);
+        });
+    } else console.warn("Select 'grid-color' not found.");
 
     console.log("Panel control listeners setup complete.");
 }
 
 
+function updateOverlayControlsVisibility() {
+    const showOverlayControls = config.overlayType !== 'none';
+    const overlayOptionsSection = document.querySelector('#overlays-panel .menu-section:nth-child(2)');
+    if(overlayOptionsSection) {
+        overlayOptionsSection.style.display = showOverlayControls ? '' : 'none';
+    }
+
+    if(showOverlayControls) {
+        const vectorDensityControl = document.getElementById('vector-density')?.closest('.overlay-option-item');
+        const isolineSpacingControl = document.getElementById('isoline-spacing')?.closest('.overlay-option-item');
+
+        if (vectorDensityControl) {
+            vectorDensityControl.style.display = (config.displayMode === 'vector') ? '' : 'none';
+        }
+        if (isolineSpacingControl) {
+            isolineSpacingControl.style.display = (config.displayMode === 'isoline') ? '' : 'none';
+        }
+    }
+    const legend = document.getElementById('overlay-legend');
+    if(legend) legend.classList.toggle('visible', showOverlayControls);
+}
+
+
+
+function setupTopBarListeners() {
+    // ... (Top bar logic remains largely the same) ...
+    console.log("Setting up top bar listeners...");
+    const topBarButtons = document.querySelectorAll('#top-control-bar .top-bar-button:not(.square-button):not(.top-bar-toggle)');
+    topBarButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const isActive = button.classList.contains('active');
+            if (!isActive) {
+                topBarButtons.forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+            } else {
+                button.classList.remove('active');
+            }
+        });
+    });
+    // Ensure only one is active initially
+    let activeFound = false;
+    topBarButtons.forEach(button => {
+        if (button.classList.contains('active')) { if (!activeFound) { activeFound = true; } else { button.classList.remove('active'); } }
+    });
+    console.log("Top bar listeners setup complete.");
+}
+
 // --- Globe Interaction Handlers ---
 
 function handleMouseDown(event) {
-    if (event.button !== 0) return; // Only handle left clicks for drag
-    event.preventDefault(); // Prevent text selection during drag
+    if (event.button !== 0) return; // Only left click
+    event.preventDefault();
     isDragging = true;
-    // Use clientX/Y for consistency across mouse/touch
     dragStartCoords = { x: event.clientX, y: event.clientY };
-    dragStartRotation = [...appState.currentRotation]; // Store rotation at drag start
-    svg.style('cursor', 'grabbing'); // Change cursor
-    callbacks.startStopAutoRotate(false); // Stop autorotate on interaction
-    hideTooltip(); // Hide tooltip during drag
+    dragStartRotation = [...appState.currentRotation];
+    svg.style('cursor', 'grabbing');
+    if (callbacks.startStopAutoRotate) callbacks.startStopAutoRotate(false);
+    hideTooltip();
 }
 
 function handleDragMove(event) {
     if (!isDragging) return;
     event.preventDefault();
 
-    // Calculate delta from the drag start coordinates
     const dx = event.clientX - dragStartCoords.x;
     const dy = event.clientY - dragStartCoords.y;
+    const sensitivityFactor = 1 / (appState.currentScale * 0.015); // Simplified sensitivity
+    const effectiveSensitivity = Math.max(0.05, Math.min(1, config.sensitivity * sensitivityFactor)); // Adjusted clamps
 
-    // Calculate new rotation based on delta from START rotation
-    const rotation = [...dragStartRotation]; // Start from rotation when drag began
+    const rotation = [...dragStartRotation];
+    rotation[0] = dragStartRotation[0] + dx * effectiveSensitivity; // Simplified calculation
+    rotation[1] = dragStartRotation[1] - dy * effectiveSensitivity; // Simplified calculation
+    rotation[1] = Math.max(-90, Math.min(90, rotation[1])); // Clamp latitude
 
-    // Adjust sensitivity - maybe needs tweaking
-    const sensitivityFactor = (config.projection === 'orthographic') ? (1 / (appState.currentScale * 0.01)) : (1 / (appState.currentScale * 0.02)); // Less sensitive for flat maps?
-    const effectiveSensitivity = Math.max(0.1, config.sensitivity * sensitivityFactor); // Clamp sensitivity
-
-    rotation[0] = dragStartRotation[0] + dx / effectiveSensitivity; // Longitude rotates around Y axis
-    rotation[1] = dragStartRotation[1] - dy / effectiveSensitivity; // Latitude rotates around X axis (inverted Y)
-
-    // Clamp latitude to avoid flipping over poles
-    rotation[1] = Math.max(-90, Math.min(90, rotation[1]));
-
-    // Normalize longitude
-    rotation[0] = (rotation[0] + 540) % 360 - 180;
-
-    callbacks.updateRotation(rotation);
-    callbacks.scheduleRender(); // Render frequently during drag
+    if (callbacks.updateRotation) callbacks.updateRotation(rotation);
+    // Schedule a render, but don't force high-res during drag
+    if (callbacks.scheduleRender) callbacks.scheduleRender(false);
 }
 
-
 function handleMouseUp(event) {
-    if (event.button !== 0) return; // Only handle left clicks
+    if (event.button !== 0) return;
     if (isDragging) {
         isDragging = false;
-        svg.style('cursor', 'grab'); // Restore cursor
-        // Consider restarting autorotate if it was on before
-        if (config.rotationSpeed > 0) {
-            // Optional: Add a small delay before restarting autorotation
-            // setTimeout(() => callbacks.startStopAutoRotate(true), 500);
+        svg.style('cursor', 'grab');
+        if (config.autoRotate && config.rotationSpeed > 0 && callbacks.startStopAutoRotate) {
+            callbacks.startStopAutoRotate(true);
         }
-        callbacks.scheduleRender(true); // Ensure final state is rendered cleanly
+        // Schedule a final high-quality render after drag ends
+        if (callbacks.scheduleRender) callbacks.scheduleRender(true);
     }
 }
 
 function handleMouseLeave() {
-    // If mouse leaves SVG while dragging, treat it as mouse up
     if (isDragging) {
         isDragging = false;
-        svg.style('cursor', 'default'); // Or 'grab' if you prefer
-        if (config.rotationSpeed > 0) {
+        svg.style('cursor', 'default');
+        if (config.autoRotate && config.rotationSpeed > 0 && callbacks.startStopAutoRotate) {
+            // Optionally restart auto-rotate here if needed
             // callbacks.startStopAutoRotate(true);
         }
-        callbacks.scheduleRender(true);
+        if (callbacks.scheduleRender) callbacks.scheduleRender(true);
     }
-    hideTooltip(); // Also hide tooltip when mouse leaves SVG
+    hideTooltip();
 }
 
 function handleTouchStart(event) {
     if (event.touches.length === 1) {
-        event.preventDefault(); // Prevent page scroll/zoom etc.
+        event.preventDefault();
         isDragging = true;
         const touch = event.touches[0];
         dragStartCoords = { x: touch.clientX, y: touch.clientY };
         dragStartRotation = [...appState.currentRotation];
-        callbacks.startStopAutoRotate(false);
+        if (callbacks.startStopAutoRotate) callbacks.startStopAutoRotate(false);
         hideTooltip();
     }
-    // Handle pinch-zoom later if needed
 }
 
 function handleTouchMove(event) {
@@ -370,100 +417,95 @@ function handleTouchMove(event) {
         const touch = event.touches[0];
         const dx = touch.clientX - dragStartCoords.x;
         const dy = touch.clientY - dragStartCoords.y;
+        const sensitivityFactor = 1 / (appState.currentScale * 0.015);
+        const effectiveSensitivity = Math.max(0.05, Math.min(1, config.sensitivity * sensitivityFactor));
 
         const rotation = [...dragStartRotation];
-        const sensitivityFactor = (config.projection === 'orthographic') ? (1 / (appState.currentScale * 0.01)) : (1 / (appState.currentScale * 0.02));
-        const effectiveSensitivity = Math.max(0.1, config.sensitivity * sensitivityFactor);
-
-        rotation[0] = dragStartRotation[0] + dx / effectiveSensitivity;
-        rotation[1] = dragStartRotation[1] - dy / effectiveSensitivity;
+        rotation[0] = dragStartRotation[0] + dx * effectiveSensitivity;
+        rotation[1] = dragStartRotation[1] - dy * effectiveSensitivity;
         rotation[1] = Math.max(-90, Math.min(90, rotation[1]));
-        rotation[0] = (rotation[0] + 540) % 360 - 180;
 
-        callbacks.updateRotation(rotation);
-        callbacks.scheduleRender();
+        if (callbacks.updateRotation) callbacks.updateRotation(rotation);
+        if (callbacks.scheduleRender) callbacks.scheduleRender(false);
     }
 }
 
 function handleTouchEnd(event) {
-    // If last touch ends
-    if (event.touches.length === 0 && isDragging) {
+    if (isDragging && event.touches.length === 0) {
         isDragging = false;
-        if (config.rotationSpeed > 0) {
-            // callbacks.startStopAutoRotate(true);
+        if (config.autoRotate && config.rotationSpeed > 0 && callbacks.startStopAutoRotate) {
+            callbacks.startStopAutoRotate(true);
         }
-        callbacks.scheduleRender(true);
+        if (callbacks.scheduleRender) callbacks.scheduleRender(true);
     }
 }
 
 function handleWheel(event) {
-    event.preventDefault(); // Prevent page scroll
-    callbacks.startStopAutoRotate(false); // Stop autorotate on interaction
+    event.preventDefault();
+    if (callbacks.startStopAutoRotate) callbacks.startStopAutoRotate(false);
 
-    // Determine zoom factor (adjust multiplier for sensitivity)
-    const scaleFactor = event.deltaY < 0 ? 1.15 : 1 / 1.15; // Faster zoom?
-
-    // Calculate new scale, clamped
+    const scaleFactor = event.deltaY < 0 ? 1.15 : 1 / 1.15;
     const newScale = Math.max(config.minScale, Math.min(config.maxScale, appState.currentScale * scaleFactor));
 
-    // Simple zoom towards center for now
-    if (Math.abs(newScale - appState.currentScale) > 0.1) { // Only update if scale actually changes noticeably
-        callbacks.updateScale(newScale);
-        callbacks.scheduleRender(); // Re-render needed after zoom
+    if (Math.abs(newScale - appState.currentScale) > 0.01) {
+        // Call updateScale callback to update appState
+        if (callbacks.updateScale) callbacks.updateScale(newScale);
+        // Schedule a render (force=true to ensure LOD check happens)
+        if (callbacks.scheduleRender) callbacks.scheduleRender(true);
     }
 }
 
 // --- Tooltip Handlers ---
 function handleTooltipMove(event) {
-    if (isDragging || !tooltip) return; // Don't show tooltip while dragging
-
-    const [pointerX, pointerY] = d3.pointer(event, svg.node()); // Get pointer relative to SVG
-
-    // Debounce tooltip update / Add delay
+    if (isDragging || !tooltip) return;
+    const [pointerX, pointerY] = d3.pointer(event, svg.node());
     clearTimeout(tooltipTimeout);
-    tooltipTimeout = setTimeout(() => {
-        // Convert screen coords to lon/lat AFTER delay
-        const coords = screenToLonLat(pointerX, pointerY, appState.currentScale, appState.currentRotation, config.width, config.height);
 
+    tooltipTimeout = setTimeout(() => {
+        if (!svg.node().contains(event.target)) {
+            hideTooltip();
+            return;
+        }
+        const coords = screenToLonLat(pointerX, pointerY, appState.currentScale, appState.currentRotation, config.width, config.height, config.projection);
         if (coords) {
             const [lon, lat] = coords;
             const formattedLon = lon.toFixed(2);
             const formattedLat = lat.toFixed(2);
             let tooltipContent = `Lon: ${formattedLon}°<br>Lat: ${formattedLat}°`;
 
-            // Add overlay data if applicable
             if (config.overlayType !== 'none') {
-                const overlayValue = getOverlayValue(lon, lat, config.altitudeKm, config.overlayType);
-                if (overlayValue !== null) {
-                    tooltipContent += `<br>${config.overlayType.charAt(0).toUpperCase() + config.overlayType.slice(1)}: ${formatOverlayValue(overlayValue, config.overlayType)}`;
+                const calculationYear = config.decimalYear || getCurrentDecimalYear();
+                const overlayValue = getOverlayValue(lon, lat, config.altitudeKm, calculationYear, config.overlayType);
+                if (overlayValue !== null && isFinite(overlayValue)) {
+                    const overlayName = config.overlayType === 'magvar' ? 'MagVar' : config.overlayType;
+                    tooltipContent += `<br>${overlayName}: ${formatOverlayValue(overlayValue, config.overlayType)}`;
+                    tooltipContent += `<br><span class="tooltip-context">Alt: ${config.altitudeKm.toFixed(0)} km, Date: ${calculationYear.toFixed(1)}</span>`;
+                } else if (overlayValue !== null) {
+                    tooltipContent += `<br><span class="tooltip-context">Overlay: Error</span>`;
                 }
             }
-
-            tooltip.innerHTML = tooltipContent; // Use innerHTML to render <br>
-            // Position tooltip relative to page, not SVG
+            tooltip.innerHTML = tooltipContent;
             tooltip.style.left = `${event.pageX + 15}px`;
             tooltip.style.top = `${event.pageY + 10}px`;
             tooltip.style.opacity = 1;
-            tooltip.style.pointerEvents = 'auto'; // Allow interaction if needed (usually not)
-
+            tooltip.style.pointerEvents = 'auto';
         } else {
-            hideTooltip(); // Hide if pointer is off the globe
+            hideTooltip();
         }
-    }, 100); // 100ms delay before showing/updating tooltip
+    }, 100);
 }
 
-
-function handleTooltipOut() {
-    clearTimeout(tooltipTimeout); // Clear any pending tooltip update
-    hideTooltip();
-}
-
-function hideTooltip() {
-    if (tooltip) {
-        tooltip.style.opacity = 0;
-        tooltip.style.pointerEvents = 'none'; // Prevent ghost interactions
+function handleTooltipOut(event) {
+    if (!svg.node().contains(event.relatedTarget)) {
+        clearTimeout(tooltipTimeout);
+        hideTooltip();
     }
 }
 
-// --- REMOVED setupMenu(), setupSettingsPanel() ---
-// Logic moved into setupPanelControlListeners()
+function hideTooltip() {
+    clearTimeout(tooltipTimeout);
+    if (tooltip) {
+        tooltip.style.opacity = 0;
+        tooltip.style.pointerEvents = 'none';
+    }
+}

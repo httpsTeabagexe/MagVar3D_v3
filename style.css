@@ -1,17 +1,17 @@
-/* Base Styles - Navigraph Inspired (Refined) */
+/* Base Styles - Navigraph Inspired (Improved Readability) */
 :root {
     --navigraph-bg-dark: #15181C;
     --navigraph-bg-medium: #242830;
     --navigraph-bg-light: #313640;
-    --navigraph-border: #2A2E36;
+    --navigraph-border: #39414D; /* Slightly lighter for better distinction */
     --navigraph-text-primary: #dcdcdc;
-    --navigraph-text-secondary: #8A919F;
-    --navigraph-accent: #4A90E2;
-    --navigraph-accent-darker: #3E7CC0; /* For hover on active */
-    --navigraph-danger: #E74C3C;       /* For reset button */
-    --navigraph-danger-hover: #C0392B; /* For reset button hover */
+    --navigraph-text-secondary: #9CA3B3; /* Lighter for better contrast on medium bg */
+    --navigraph-accent: #2A6FCE; /* Darker blue for better contrast with white text */
+    --navigraph-accent-darker: #2460B6; /* Adjusted darker hover for new accent */
+    --navigraph-danger: #E74C3C;
+    --navigraph-danger-hover: #C0392B;
     --navigraph-bg-dark-rgb: 21, 24, 28;
-    --top-bar-height: 45px; /* Define height as variable */
+    /* --top-bar-height: 45px; -- Removed */
 }
 
 body {
@@ -28,7 +28,7 @@ body {
 #left-sidebar {
     position: fixed;
     left: 0;
-    top: 0;
+    top: 0; /* Start from the top */
     bottom: 0;
     width: 60px;
     background-color: var(--navigraph-bg-dark);
@@ -36,13 +36,11 @@ body {
     z-index: 200;
     display: flex;
     flex-direction: column;
-    padding-top: var(--top-bar-height); /* Start below top bar */
+    padding-top: 5px; /* Reduced padding */
     user-select: none;
-    transition: padding-top 0.25s ease-in-out; /* Transition padding */
+    /* transition: padding-top 0.25s ease-in-out; -- Removed transition */
 }
-body.top-bar-hidden #left-sidebar {
-    padding-top: 5px; /* Less padding when top bar is hidden */
-}
+/* body.top-bar-hidden #left-sidebar -- Removed selector */
 
 
 .sidebar-item {
@@ -88,20 +86,16 @@ body.top-bar-hidden #left-sidebar {
 #sidebar-content {
     position: fixed;
     left: 60px;
+    top: 0; /* Start from the top */
     bottom: 0;
     width: 320px;
     z-index: 199;
     overflow: hidden;
     pointer-events: none;
-    top: var(--top-bar-height); /* Default position */
-    height: calc(100% - var(--top-bar-height)); /* Default height */
-    transition: top 0.25s ease-in-out, height 0.25s ease-in-out;
+    height: 100%; /* Full height */
+    /* transition: top 0.25s ease-in-out, height 0.25s ease-in-out, left 0.25s ease-in-out, width 0.25s ease-in-out; -- Removed transition */
 }
-body.top-bar-hidden #sidebar-content {
-    top: 0;
-    height: 100%;
-}
-
+/* body.top-bar-hidden #sidebar-content -- Removed selector */
 
 .sidebar-content-panel {
     position: absolute;
@@ -121,17 +115,14 @@ body.top-bar-hidden #sidebar-content {
     overflow: hidden;
 }
 
-/* Inner container for padding and scrolling */
 .panel-inner-content {
-    padding: 0 15px 20px 15px; /* Padding for content below header */
-    flex-grow: 1; /* Allow content to take remaining space */
-    overflow-y: auto; /* Enable scrolling within content area */
-    /* Custom scrollbar styling (optional, WebKit browsers) */
+    padding: 0 15px 20px 15px;
+    flex-grow: 1;
+    overflow-y: auto;
     &::-webkit-scrollbar { width: 6px; }
     &::-webkit-scrollbar-track { background: var(--navigraph-bg-medium); }
     &::-webkit-scrollbar-thumb { background-color: var(--navigraph-bg-light); border-radius: 3px; }
 }
-
 
 .sidebar-content-panel.visible {
     opacity: 1;
@@ -139,7 +130,6 @@ body.top-bar-hidden #sidebar-content {
     pointer-events: auto;
 }
 
-/* Sidebar Content Panel Header */
 .panel-header {
     display: flex;
     justify-content: space-between;
@@ -176,11 +166,10 @@ body.top-bar-hidden #sidebar-content {
     opacity: 1;
 }
 
-
 /* Panel Content Styling */
 .menu-section { margin-bottom: 1.5em; }
 
-.menu-section h4 { /* Subcategory titles */
+.menu-section h4 {
     font-size: 11px;
     font-weight: 600;
     color: var(--navigraph-text-secondary);
@@ -190,7 +179,7 @@ body.top-bar-hidden #sidebar-content {
     border-bottom: 1px solid var(--navigraph-border);
 }
 
-.menu-section label { /* General labels */
+.menu-section label {
     display: block;
     margin-bottom: 0.6em;
     cursor: pointer;
@@ -264,7 +253,6 @@ button, .display-mode-btn {
     transition: background-color 0.2s ease, border-color 0.2s ease;
     white-space: nowrap;
 }
-/* Exclude hide button from this generic styling */
 button.hide-panel-button {
     background: none;
     border: none;
@@ -308,7 +296,7 @@ button.hide-panel-button:hover {
     align-items: center;
     justify-content: space-between;
     padding: 9px 10px;
-    margin: 0 -10px; /* Extend hover */
+    margin: 0 -10px;
     border-radius: 3px;
     cursor: default;
     transition: background-color 0.15s ease;
@@ -345,7 +333,6 @@ button.hide-panel-button:hover {
 .preset-item.active:hover {
     background-color: var(--navigraph-accent-darker);
 }
-
 
 .preset-item.sub-item {
     padding-left: 25px;
@@ -415,166 +402,160 @@ input:checked + .slider:before { transform: translateX(14px); }
 }
 .subtle-button:hover { color: var(--navigraph-accent-darker); }
 
-
 /* Color options */
-.color-option { /* Styles unchanged */ }
-.color-option:hover { /* Styles unchanged */ }
-.color-option.selected { /* Styles unchanged */ }
+.color-option {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    margin: 0 5px;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: border-color 0.15s ease;
+}
+.color-option:hover {
+    border-color: var(--navigraph-text-secondary);
+}
+.color-option.selected {
+    border-color: var(--navigraph-accent);
+}
 
 /* Overlay Controls Specific Styles */
-.overlay-row { /* Styles unchanged */ }
-.overlay-label { /* Styles unchanged */ }
-.overlay-value { /* Styles unchanged */ }
-.overlay-selector { /* Styles unchanged */ }
-#height-level { /* Styles unchanged */ }
-#height-value { /* Styles unchanged */ }
-.overlay-value > .display-mode-btn { /* Styles unchanged */ }
-.overlay-value > .display-mode-btn:first-child { /* Styles unchanged */ }
+.overlay-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.8em;
+    font-size: 12px;
+}
+.overlay-label {
+    width: 80px; /* Adjust as needed */
+    color: var(--navigraph-text-secondary);
+    flex-shrink: 0;
+}
+.overlay-value {
+    flex-grow: 1;
+    display: flex;
+    align-items: center;
+}
+.overlay-selector {
+    width: auto; /* Override default width */
+    flex-grow: 1;
+    margin-bottom: 0;
+}
+#height-level {
+    width: auto;
+    flex-grow: 1;
+    margin: 0 10px 0 0;
+    margin-bottom: 0; /* Override range default */
+}
+#height-value {
+    color: var(--navigraph-text-secondary);
+    min-width: 40px; /* Prevent jumpiness */
+    text-align: right;
+}
+.overlay-value > .display-mode-btn {
+    margin-right: 0.3em; /* Reduce margin between mode buttons */
+    margin-bottom: 0;
+    padding: 0.4em 0.8em;
+    font-size: 10px;
+}
+.overlay-value > .display-mode-btn:first-child {
+    /* margin-left: 0.5em; */ /* Add spacing if needed */
+}
 
 /* Grid Dots */
 .grid-dots circle { fill: rgba(200, 200, 200, 0.25); }
 
 /* Legend */
-.legend { /* Styles unchanged */ }
-.legend.visible { /* Styles unchanged */ }
-.legend h3 { /* Styles unchanged */ }
-.legend-content { /* Styles unchanged */ }
-.legend-gradient { /* Styles unchanged */ }
-.legend-labels { /* Styles unchanged */ }
-.legend-labels span { /* Styles unchanged */ }
-
-/* Tooltip */
-#tooltip { /* Styles unchanged */ }
-
-/* Top Control Bar */
-#top-control-bar {
-    position: fixed;
-    top: 0;
-    height: var(--top-bar-height);
-    background-color: var(--navigraph-bg-dark);
-    border-bottom: 1px solid var(--navigraph-border);
-    z-index: 180;
-    display: flex;
-    align-items: center;
-    padding: 0 5px 0 0; /* Adjusted padding */
-    gap: 8px;
-    box-sizing: border-box;
-    left: 60px;
-    width: calc(100% - 60px);
-    transition: left 0.25s ease-in-out, width 0.25s ease-in-out, transform 0.25s ease-in-out, opacity 0.25s ease-in-out;
-    transform: translateY(0);
-    opacity: 1;
-}
-body.panel-visible #top-control-bar {
-    left: calc(60px + 320px);
-    width: calc(100% - 60px - 320px);
-}
-body.top-bar-hidden #top-control-bar {
-    transform: translateY(-100%);
+.legend {
+    position: absolute;
+    bottom: 10px;
+    right: 15px;
+    background-color: rgba(var(--navigraph-bg-dark-rgb), 0.85); /* Use RGB for opacity */
+    color: var(--navigraph-text-primary);
+    border-radius: 3px;
+    padding: 10px 15px;
+    font-size: 11px;
+    z-index: 100;
+    max-width: 180px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+    border: 1px solid var(--navigraph-border);
     opacity: 0;
+    transition: opacity 0.3s ease;
     pointer-events: none;
 }
-
-
-/* Top Bar Toggle Button */
-.top-bar-toggle {
-    width: 20px;
-    height: var(--top-bar-height);
-    border: none;
-    background-color: var(--navigraph-bg-light);
+.legend.visible {
+    opacity: 1;
+}
+.legend h3 {
+    margin: 0 0 8px 0;
+    padding-bottom: 5px;
+    font-size: 10px;
+    font-weight: 600;
     color: var(--navigraph-text-secondary);
-    cursor: pointer;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--navigraph-border);
+}
+.legend-content {
     display: flex;
     align-items: center;
-    justify-content: center;
-    padding: 0;
-    margin-right: 8px;
-    transition: background-color 0.15s ease, color 0.15s ease, transform 0.25s ease-in-out; /* Added transform */
-    font-size: 12px;
-    border-right: 1px solid var(--navigraph-border);
 }
-.top-bar-toggle:hover {
-    background-color: #414752;
+.legend-gradient {
+    width: 10px;
+    height: 100px; /* Adjust as needed */
+    border-radius: 2px;
+    margin-right: 10px;
+}
+.legend-labels {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 100px; /* Match gradient height */
+    color: var(--navigraph-text-secondary);
+}
+.legend-labels span {
+    display: block;
+    line-height: 1.2;
+}
+
+/* Tooltip */
+#tooltip {
+    position: absolute;
+    background: var(--navigraph-bg-medium);
     color: var(--navigraph-text-primary);
-}
-/* Rotate arrow when bar is hidden */
-body.top-bar-hidden .top-bar-toggle {
-    transform: scaleY(-1); /* Flip arrow */
-}
-
-
-.top-bar-button {
-    background-color: var(--navigraph-bg-light);
+    padding: 8px 12px;
+    border-radius: 3px;
+    font-size: 11px;
+    z-index: 1010; /* Above legend */
+    max-width: 200px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.1s ease;
     border: 1px solid var(--navigraph-border);
-    color: var(--navigraph-text-secondary);
-    height: 32px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
-    padding: 0 12px;
-    font-size: 12px;
-    font-weight: 500;
     white-space: nowrap;
-    user-select: none;
 }
-.top-bar-button .icon {
-    font-size: 16px;
-    margin-right: 6px;
-    line-height: 1;
-}
-.top-bar-button .label { line-height: 1; }
 
-.top-bar-button.square-button {
-    width: 32px; padding: 0;
-    /* margin-right: 10px; */ /* Removed default margin, handled by gap */
-}
-.top-bar-button.square-button .icon {
-    margin-right: 0; font-size: 18px;
-}
-.top-bar-button:hover {
-    background-color: #414752; border-color: #505662;
-    color: var(--navigraph-text-primary);
-}
-.top-bar-button.active {
-    background-color: var(--navigraph-accent);
-    border-color: var(--navigraph-accent);
-    color: #fff;
-}
-.top-bar-button.active:hover {
-    background: var(--navigraph-accent-darker);
-    border-color: var(--navigraph-accent-darker);
-}
-.top-bar-button:not(.active) {
-    background-color: transparent; border-color: transparent;
-    color: var(--navigraph-text-secondary);
-}
-.top-bar-button:not(.active):hover {
-    background-color: var(--navigraph-bg-light);
-    border-color: var(--navigraph-border);
-    color: var(--navigraph-text-primary);
-}
+/* Top Control Bar - REMOVED RULES */
+/* #top-control-bar, .top-bar-toggle, .top-bar-button related rules removed */
+
 
 /* Main Globe Area */
 #globe {
     position: fixed;
-    height: calc(100vh - var(--top-bar-height));
+    top: 0; /* Start from the top */
+    height: 100vh; /* Full height */
     z-index: 1;
     left: 60px;
     width: calc(100% - 60px);
-    transition: left 0.25s ease-in-out, width 0.25s ease-in-out, top 0.25s ease-in-out, height 0.25s ease-in-out;
-    top: var(--top-bar-height);
+    transition: left 0.25s ease-in-out, width 0.25s ease-in-out; /* Keep panel transition */
+    /* Removed top and height transitions */
 }
 body.panel-visible #globe {
     left: calc(60px + 320px);
     width: calc(100% - 60px - 320px);
 }
-body.top-bar-hidden #globe {
-    top: 0;
-    height: 100vh;
-}
+/* body.top-bar-hidden #globe -- Removed selector */
 
 .earth-viewer { display: block; }
 
@@ -585,22 +566,41 @@ footer {
     right: 15px;
     font-size: 10px;
     color: var(--navigraph-text-secondary);
-    background-color: rgba(21, 24, 28, 0.8);
+    background-color: rgba(var(--navigraph-bg-dark-rgb), 0.8);
     padding: 4px 8px;
     border-radius: 3px;
     z-index: 100;
 }
 #footer-info { display: block; }
 
-/* Marker and Info Window (Unchanged) */
+/* Marker and Info Window */
 .marker { position: absolute; width: 10px; height: 10px; border-radius: 50%; background: rgba(74, 144, 226, 0.8); border: 1px solid rgba(255, 255, 255, 0.7); transform: translate(-50%, -50%); pointer-events: none; z-index: 990; box-shadow: 0 0 6px rgba(74, 144, 226, 0.6); }
 .info-window { position: absolute; background: var(--navigraph-bg-medium); color: var(--navigraph-text-primary); padding: 12px; border-radius: 3px; font-size: 11px; z-index: 1000; max-width: 200px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4); transform: translate(-50%, -100%); margin-top: -12px; pointer-events: none; border: 1px solid var(--navigraph-border); }
 .info-window::after { content: ''; position: absolute; bottom: -6px; left: 50%; width: 12px; height: 12px; background: var(--navigraph-bg-medium); transform: translateX(-50%) rotate(45deg); z-index: -1; border-right: 1px solid var(--navigraph-border); border-bottom: 1px solid var(--navigraph-border); }
 
-/* Loading Text (Unchanged) */
+/* Loading Text */
 .loading-text { font-size: 16px; font-weight: 600; fill: var(--navigraph-text-primary); text-anchor: middle; }
 
 /* Remove old overlay styles no longer used */
 .overlay, .status, .location, .data-info, .menu-button, .panel, .overlay-menu, #map-controls-panel {
     display: none !important;
+}
+
+/* Added style for body.panel-visible for sidebar positioning */
+body.panel-visible #sidebar-content {
+    left: 60px; /* Keep it next to the icon bar */
+    width: 320px; /* Ensure width is maintained */
+}
+
+/* Adjust left-sidebar padding and transitions */
+#left-sidebar {
+    padding-top: 5px; /* Consistent padding */
+    transition: none; /* Remove transitions related to top bar */
+}
+
+/* Adjust sidebar-content top, height, and transitions */
+#sidebar-content {
+    top: 0;
+    height: 100%;
+    transition: left 0.25s ease-in-out, width 0.25s ease-in-out, opacity 0.25s ease-in-out, transform 0.25s ease-in-out; /* Keep panel slide transition */
 }

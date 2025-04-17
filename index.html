@@ -15,8 +15,8 @@
   <div class="sidebar-item active" data-panel="search-panel">
     <span class="icon">🔍</span> <span class="label">Search</span>
   </div>
-  <div class="sidebar-item" data-panel="display-panel"> <!-- Display now holds map layers/presets -->
-    <span class="icon">🗺️</span> <span class="label">Map</span> <!-- Changed Icon/Label -->
+  <div class="sidebar-item" data-panel="display-panel">
+    <span class="icon">🗺️</span> <span class="label">Map</span>
   </div>
   <div class="sidebar-item" data-panel="overlays-panel">
     <span class="icon">📊</span> <span class="label">Overlays</span>
@@ -32,30 +32,7 @@
   </div>
 </div>
 
-<!-- Top Control Bar -->
-<div id="top-control-bar">
-  <!-- Toggle Button for Top Bar -->
-  <button id="toggle-top-bar" class="top-bar-toggle" title="Toggle Top Bar">▲</button>
-
-  <!-- *** UPDATED BUTTON BELOW *** -->
-  <button id="toggle-widget-panel" class="top-bar-button square-button" title="Open/Close Widget Selector">
-    <span class="icon">▦</span> <!-- U+25A6 SQUARED SQUARE -->
-  </button>
-  <!-- *** END UPDATED BUTTON *** -->
-
-  <button id="top-btn-route" class="top-bar-button" title="Route Planning">
-    <span class="icon">↛</span> <span class="label">Route</span>
-  </button>
-  <button id="top-btn-weather" class="top-bar-button active" title="Weather Options">
-    <span class="icon">☁</span> <span class="label">Weather</span>
-  </button>
-  <button id="top-btn-telemetry" class="top-bar-button" title="Telemetry Data">
-    <span class="icon">⌚</span> <span class="label">Telemetry</span>
-  </button>
-  <button id="top-btn-pinboard" class="top-bar-button" title="Pinboards">
-    <span class="icon"></span> <span class="label">Pinboard</span>
-  </button>
-</div>
+<!-- Top Control Bar REMOVED -->
 
 
 <!-- Content Panels (Appear next to sidebar) -->
@@ -66,64 +43,20 @@
       <h3>Search</h3>
       <button class="hide-panel-button" title="Hide Panel">✕</button>
     </div>
-    <div class="panel-inner-content"> <!-- Added Inner Container -->
+    <div class="panel-inner-content">
       <input type="text" placeholder="Search locations...">
       <p>Let's start exploring</p>
       <p style="color: var(--navigraph-text-secondary); font-size: 11px;">Use the Search textfield to get results for your journey.</p>
     </div>
   </div>
 
-  <!-- Display Panel (Now includes Map Presets/Layers) -->
+  <!-- Display Panel -->
   <div id="display-panel" class="sidebar-content-panel">
     <div class="panel-header">
-      <h3>Map Display</h3> <!-- Renamed -->
+      <h3>Map Display</h3>
       <button class="hide-panel-button" title="Hide Panel">✕</button>
     </div>
-    <div class="panel-inner-content"> <!-- Added Inner Container -->
-
-      <!-- Map Presets Subcategory -->
-      <div class="menu-section">
-        <h4>Map Presets</h4>
-        <div class="preset-list">
-          <div class="preset-item">
-            <span>IFR</span>
-          </div>
-          <div class="preset-item sub-item interactive"> <!-- Interactive items -->
-            <span>Auto IFR</span>
-            <label class="switch" title="Toggle Auto IFR">
-              <input type="checkbox" id="toggle-auto-ifr">
-              <span class="slider round"></span>
-            </label>
-          </div>
-          <div class="preset-item sub-item active interactive"> <!-- Active state -->
-            <span>IFR HIGH <small>(Modified)</small></span>
-            <button class="reset-button" title="Reset Preset">Reset</button>
-          </div>
-          <div class="preset-item sub-item">
-            <span>IFR LOW</span>
-          </div>
-          <div class="preset-item divider"> <!-- Divider style -->
-            <span>Other</span>
-          </div>
-          <div class="preset-item">
-            <span>VFR</span>
-          </div>
-          <div class="preset-item">
-            <span>WORLD MAP</span>
-          </div>
-          <div class="preset-item">
-            <span>SATELLITE</span>
-          </div>
-          <!-- Add more presets as needed -->
-          <div class="preset-item sub-item">
-            <span>FAA VFR SECTIONALS (US)</span>
-          </div>
-          <div class="preset-item sub-item">
-            <span>FAA IFR HIGH (US)</span>
-          </div>
-          <!-- Add FAA IFR LOW (US) if needed -->
-        </div>
-      </div>
+    <div class="panel-inner-content">
 
       <!-- Map Layers Subcategory -->
       <div class="menu-section">
@@ -137,37 +70,13 @@
             </label>
           </div>
           <div class="layer-item interactive">
-            <span>Navaids</span>
-            <label class="switch" title="Toggle Navaids">
-              <input type="checkbox" id="toggle-layer-navaids" checked>
-              <span class="slider round"></span>
-            </label>
-          </div>
-          <div class="layer-item interactive">
             <span>Airspace</span>
             <label class="switch" title="Toggle Airspace">
-              <input type="checkbox" id="toggle-layer-airspace">
+              <input type="checkbox" id="toggle-layer-airspace" checked>
               <span class="slider round"></span>
             </label>
           </div>
-          <!-- Placeholder for layers from Pic 3/4 -->
-          <div class="layer-item placeholder interactive">
-            <span class="icon-placeholder">△</span> <!-- Up Triangle -->
-            <span>Waypoints</span>
-            <label class="switch" title="Toggle Waypoints">
-              <input type="checkbox" id="toggle-layer-waypoints" checked>
-              <span class="slider round"></span>
-            </label>
-          </div>
-          <div class="layer-item placeholder interactive">
-            <span class="icon-placeholder">△</span> <!-- Placeholder -->
-            <span style="opacity: 0.5;">Airways <small>(Zoom In)</small></span>
-            <label class="switch" title="Toggle Airways">
-              <input type="checkbox" id="toggle-layer-airways">
-              <span class="slider round"></span>
-            </label>
-          </div>
-          <!-- Add other layer items based on screenshot if desired -->
+          <!-- Removed Navaids, Waypoints, Airways -->
         </div>
       </div>
 
@@ -188,10 +97,9 @@
             <span class="slider round"></span>
           </label>
         </div>
-        <label style="margin-top: 1em;"><input type="checkbox" id="show-graticule"> Show Grid</label>
-        <label><input type="checkbox" id="show-grid-dots"> Show Grid Dots</label>
+        <label style="margin-top: 1em;"><input type="checkbox" id="show-graticule" checked> Show Grid</label>
         <label><input type="checkbox" id="outline-only"> Land Outline Only</label>
-        <label><input type="checkbox" id="show-labels"> Show Labels</label>
+        <!-- Removed Grid Dots, Labels -->
       </div>
 
     </div>
@@ -204,68 +112,78 @@
       <button class="hide-panel-button" title="Hide Panel">✕</button>
     </div>
     <div class="panel-inner-content">
-      <!-- Existing Overlay Controls -->
       <div class="menu-section">
-        <div class="overlay-row"> <!-- Keep these as rows -->
-          <div class="overlay-label">Data Type:</div>
-          <div class="overlay-value">
-            <select id="overlay-type" class="overlay-selector">
-              <option value="none">None</option>
-              <option value="magvar">Magnetic Variation</option>
-              <option value="temperature">Temperature</option>
-              <option value="windspeed">Wind Speed</option>
-              <option value="humidity">Humidity</option>
-            </select>
-          </div>
+        <h4>Overlay Selection</h4> <!-- Renamed section -->
+        <!-- MagVar Toggle (Replaces Select) -->
+        <div class="overlay-option-item">
+          <label class="switch" title="Toggle Magnetic Variation Overlay">
+            <input type="checkbox" id="toggle-magvar-overlay" checked>
+            <span class="slider round"></span>
+          </label>
+          <span style="margin-left: 5px;">Magnetic Variation</span>
         </div>
-        <div class="overlay-row">
+      </div>
+
+      <div class="menu-section">
+        <h4>Overlay Options</h4> <!-- Renamed section -->
+
+        <!-- Mode Selection -->
+        <div class="overlay-option-item">
           <div class="overlay-label">Mode:</div>
-          <div class="overlay-value">
-            <button id="mode-gradient" class="display-mode-btn">Gradient</button>
+          <div class="overlay-value btn-group">
+            <!-- Removed Gradient Button -->
             <button id="mode-vector" class="display-mode-btn">Vector</button>
             <button id="mode-isoline" class="display-mode-btn active">Isoline</button>
           </div>
         </div>
-        <div class="overlay-row">
+
+        <!-- Altitude Control -->
+        <div class="overlay-option-item">
           <div class="overlay-label">Altitude:</div>
           <div class="overlay-value">
-            <input type="range" id="height-level" min="0" max="10" value="0">
+            <input type="range" id="height-level" min="0" max="10" value="0" step="1">
             <span id="height-value">0 km</span>
           </div>
         </div>
-      </div>
-      <div class="menu-section">
-        <h3>Overlay Settings</h3>
-        <label>Overlay Opacity</label>
-        <input type="range" id="overlay-opacity" min="0" max="100" value="70">
-        <label>Vector Density</label>
-        <input type="range" id="vector-density" min="1" max="10" value="5">
-        <label>Isoline Spacing</label>
-        <select id="isoline-spacing">
-          <option value="coarse">Coarse</option>
-          <option value="medium" selected>Medium</option>
-          <option value="fine">Fine</option>
-        </select>
+
+        <!-- Date Control (NEW) -->
+        <div class="overlay-option-item">
+          <div class="overlay-label">Date:</div>
+          <div class="overlay-value">
+            <input type="number" id="date-year" min="2020" max="2030" step="0.1" style="width: 70px;">
+            <span id="date-value" style="margin-left: 5px;"></span>
+          </div>
+        </div>
+
+        <!-- Opacity Control -->
+        <div class="overlay-option-item">
+          <label for="overlay-opacity">Overlay Opacity</label>
+          <input type="range" id="overlay-opacity" min="0" max="100" value="70">
+        </div>
+
+        <!-- Vector Density (Conditional) -->
+        <div class="overlay-option-item" style="display: none;"> <!-- Initially hidden -->
+          <label for="vector-density">Vector Density</label>
+          <input type="range" id="vector-density" min="1" max="10" value="5">
+        </div>
+
+        <!-- Isoline Spacing (Conditional) -->
+        <div class="overlay-option-item"> <!-- Initially shown (default mode) -->
+          <label for="isoline-spacing">Isoline Spacing</label>
+          <select id="isoline-spacing">
+            <option value="coarse">Coarse</option>
+            <option value="medium" selected>Medium</option>
+            <option value="fine">Fine</option>
+          </select>
+        </div>
       </div>
 
-      <!-- Traffic Option -->
-      <div class="menu-section">
-        <h4>Traffic</h4>
-        <div class="option-item interactive">
-          <span>Show Online Traffic</span>
-          <label class="switch" title="Toggle Online Traffic">
-            <input type="checkbox" id="toggle-traffic">
-            <span class="slider round"></span>
-          </label>
-        </div>
-        <!-- Add Network settings button/link here if needed -->
-        <button class="subtle-button" style="margin-top: 5px;">Network Settings...</button>
-      </div>
     </div>
   </div>
 
-  <!-- Views Panel -->
+  <!-- Views Panel (Unchanged) -->
   <div id="views-panel" class="sidebar-content-panel">
+    <!-- ... existing views panel content ... -->
     <div class="panel-header">
       <h3>Globe Views</h3>
       <button class="hide-panel-button" title="Hide Panel">✕</button>
@@ -298,7 +216,6 @@
     </div>
   </div>
 
-
   <!-- Settings Panel -->
   <div id="settings-panel" class="sidebar-content-panel">
     <div class="panel-header">
@@ -306,23 +223,7 @@
       <button class="hide-panel-button" title="Hide Panel">✕</button>
     </div>
     <div class="panel-inner-content">
-      <div class="menu-section">
-        <h3>Globe Colors</h3>
-        <div>
-          <span>Land:</span>
-          <span class="color-option" style="background-color: #303030;" data-color="#303030"></span>
-          <span class="color-option" style="background-color: #2A9D8F;" data-color="#2A9D8F"></span>
-          <span class="color-option" style="background-color: #72B092;" data-color="#72B092"></span>
-          <span class="color-option" style="background-color: #466B6A;" data-color="#466B6A"></span>
-        </div>
-        <div style="margin-top: 0.5em;">
-          <span>Ocean:</span>
-          <span class="color-option" style="background-color: #181818;" data-color="#181818"></span>
-          <span class="color-option" style="background-color: #183059;" data-color="#183059"></span>
-          <span class="color-option" style="background-color: #001D3D;" data-color="#001D3D"></span>
-          <span class="color-option" style="background-color: #000814;" data-color="#000814"></span>
-        </div>
-      </div>
+      <!-- Globe Colors section removed -->
       <div class="menu-section">
         <h3>Grid Settings</h3>
         <label>Grid Opacity</label>
@@ -338,8 +239,9 @@
     </div>
   </div>
 
-  <!-- About Panel -->
+  <!-- About Panel (Unchanged) -->
   <div id="about-panel" class="sidebar-content-panel">
+    <!-- ... existing about panel content ... -->
     <div class="panel-header">
       <h3>About</h3>
       <button class="hide-panel-button" title="Hide Panel">✕</button>
@@ -385,7 +287,7 @@
 <!-- Load D3 and TopoJSON -->
 <script src="https://d3js.org/d3.v7.min.js"></script>
 <script src="https://d3js.org/topojson.v3.min.js"></script>
-<!-- Load Chroma.js for color scales (optional but useful) -->
+<!-- Load Chroma.js for color scales -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chroma-js/2.4.2/chroma.min.js"></script>
 
 <!-- Load the main application module -->

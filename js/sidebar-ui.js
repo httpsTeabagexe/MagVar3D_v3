@@ -6,7 +6,7 @@ function initializeSidebarInteractions() {
     const hideButtons = document.querySelectorAll('.hide-panel-button');
     const toggleTopBarButton = document.getElementById('toggle-top-bar');
     const toggleWidgetPanelButton = document.getElementById('toggle-widget-panel');
-    const bodyElement = document.body; // Still needed for top-bar toggle
+    const bodyElement = document.body; // Needed for panel-visible and top-bar toggle
 
     let lastOpenedPanelId = null;
     const defaultPanelId = 'search-panel';
@@ -33,7 +33,7 @@ function initializeSidebarInteractions() {
 
         if (activeItem) activeItem.classList.remove('active');
         if (visiblePanel) visiblePanel.classList.remove('visible');
-        // bodyElement.classList.remove('panel-visible'); // <-- REMOVED
+        bodyElement.classList.remove('panel-visible'); // <-- REINSTATED
         setActiveWidgetButtonState(false);
         console.log("Panel hidden.");
     }
@@ -53,7 +53,7 @@ function initializeSidebarInteractions() {
         // Activate target item/panel
         if (targetSidebarItem) targetSidebarItem.classList.add('active');
         targetPanel.classList.add('visible');
-        // bodyElement.classList.add('panel-visible'); // <-- REMOVED
+        bodyElement.classList.add('panel-visible'); // <-- REINSTATED
         setActiveWidgetButtonState(true);
 
         console.log(`Panel shown: ${targetPanelId}`);
@@ -88,14 +88,15 @@ function initializeSidebarInteractions() {
         toggleTopBarButton.addEventListener('click', () => {
             bodyElement.classList.toggle('top-bar-hidden');
             console.log(`Top bar hidden: ${bodyElement.classList.contains('top-bar-hidden')}`);
-            // setTimeout(() => window.dispatchEvent(new Event('resize')), 50); // Keep resize trigger if needed
+            // Trigger resize after transition to ensure globe resizes correctly
+            setTimeout(() => window.dispatchEvent(new Event('resize')), 260); // Slightly longer than CSS transition
         });
     }
 
     // Widget Panel Toggle Button Click (#toggle-widget-panel)
     if (toggleWidgetPanelButton) {
         toggleWidgetPanelButton.addEventListener('click', () => {
-            // Check visibility based on panel's class, not body class
+            // Check visibility based on panel's class
             const isPanelVisible = document.querySelector('.sidebar-content-panel.visible');
 
             if (isPanelVisible) {
@@ -118,24 +119,28 @@ function initializeSidebarInteractions() {
     const initiallyActiveItem = document.querySelector('.sidebar-item.active');
 
     if (initiallyVisiblePanel && initiallyActiveItem) {
-        // bodyElement.classList.add('panel-visible'); // <-- REMOVED
+        bodyElement.classList.add('panel-visible'); // <-- REINSTATED
         setActiveWidgetButtonState(true);
         lastOpenedPanelId = initiallyVisiblePanel.id;
         if (initiallyActiveItem.dataset.panel !== initiallyVisiblePanel.id) {
             console.warn("Initial active item and visible panel mismatch.");
-            // Correct state if needed
+            // Optionally correct state here if needed
+            const correctItem = document.querySelector(`.sidebar-item[data-panel="${initiallyVisiblePanel.id}"]`);
+            if(initiallyActiveItem) initiallyActiveItem.classList.remove('active');
+            if(correctItem) correctItem.classList.add('active');
+            else initiallyVisiblePanel.classList.remove('visible'); // Hide panel if no matching item
         }
     } else {
-        // bodyElement.classList.remove('panel-visible'); // <-- REMOVED
+        bodyElement.classList.remove('panel-visible'); // <-- REINSTATED
         setActiveWidgetButtonState(false);
         if(initiallyActiveItem) initiallyActiveItem.classList.remove('active');
         if(initiallyVisiblePanel) initiallyVisiblePanel.classList.remove('visible');
     }
 
-    // Initial top bar state
-    // bodyElement.classList.remove('top-bar-hidden'); // Default visible
+    // Ensure top bar is initially visible
+    bodyElement.classList.remove('top-bar-hidden');
 
-    console.log("Sidebar interactions initialized (Overlay Panel).");
+    console.log("Sidebar interactions initialized (with panel visibility logic).");
 }
 
 document.addEventListener('DOMContentLoaded', initializeSidebarInteractions);
