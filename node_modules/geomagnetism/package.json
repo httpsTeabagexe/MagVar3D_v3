@@ -1,0 +1,34 @@
+{
+  "name": "geomagnetism",
+  "types": "geomagnetism.d.ts",
+  "version": "0.2.0",
+  "description": "Computes geomagnetic field information",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha test",
+    "test-ci": "mocha -R tap"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/naturalatlas/geomagnetism.git"
+  },
+  "keywords": [
+    "geomag",
+    "geomagnetic",
+    "magnetic",
+    "field",
+    "north",
+    "declination",
+    "wmm"
+  ],
+  "devDependencies": {
+    "mocha": "~5.x",
+    "chai": "~4.2.0"
+  },
+  "author": "Brandon Reavis",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/naturalatlas/geomagnetism/issues"
+  },
+  "homepage": "https://github.com/naturalatlas/geomagnetism"
+}
