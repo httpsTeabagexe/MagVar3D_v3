@@ -1,10 +1,15 @@
 // js/ui.js
 import { config } from './config.js';
-import { screenToLonLat } from './wgs84.js';
+import { screenToLonLat } from './wgs84.js'; // Assuming screenToLonLat handles projections correctly
+import { formatOverlayValue, getOverlayValue } from './overlayUtils.js'; // For tooltip data
+import { getCurrentDecimalYear } from './wmm.js'; // Import for date handling
 
 let svg, appState, callbacks;
 let isDragging = false;
-let lastMouseX, lastMouseY;
+let dragStartCoords = { x: 0, y: 0 };
+let dragStartRotation = [0, 0, 0];
+let tooltipTimeout = null; // To delay tooltip appearance
+
 let marker, infoWindow, tooltip;
 
 export function initializeUI(_svg, _appState, _callbacks) {
@@ -12,299 +17,495 @@ export function initializeUI(_svg, _appState, _callbacks) {
     appState = _appState;
     callbacks = _callbacks;
 
-    // Initialize UI elements
+    // Initialize UI elements (Tooltip, Marker - unrelated to sidebar)
     marker = document.getElementById('marker');
     infoWindow = document.getElementById('info-window');
     tooltip = document.getElementById('tooltip');
+    if (!tooltip) console.error("Tooltip element not found!");
 
-    // Setup event listeners
-    setupEventListeners();
-    setupMenu();
-    setupSettingsPanel();
-    setupOverlayControls();
+
+    // Setup event listeners for the globe SVG (dragging, zooming, tooltip)
+    setupGlobeInteractionListeners();
+
+    // Setup event listeners for controls INSIDE the panels and top bar
+    setupPanelControlListeners();
+    setupTopBarListeners();
+
+    // Set initial theme based on config.nightMode
+    applyTheme(config.nightMode);
+
+    console.log("Base UI initialized.");
 }
 
-function setupEventListeners() {
+function setupGlobeInteractionListeners() {
+    if (!svg) {
+        console.error("SVG element not available for globe interaction listeners.");
+        return;
+    }
     // Mouse events for dragging
     svg.on('mousedown', handleMouseDown);
-    svg.on('mousemove', handleMouseMove);
+    svg.on('mousemove', handleDragMove);
     svg.on('mouseup', handleMouseUp);
-    svg.on('mouseout', handleMouseUp);
+    svg.on('mouseleave', handleMouseLeave);
 
     // Mouse events for tooltip
-    svg.on('mouseover', handleMouseOver);
-    svg.on('mousemove', handleMouseOver);
-    svg.on('mouseout', handleMouseOut);
+    svg.on('mousemove.tooltip', handleTooltipMove);
+    svg.on('mouseout.tooltip', handleTooltipOut);
 
     // Touch events for dragging
-    svg.on('touchstart', handleTouchStart);
-    svg.on('touchmove', handleTouchMove);
+    svg.on('touchstart', handleTouchStart, { passive: false });
+    svg.on('touchmove', handleTouchMove, { passive: false });
     svg.on('touchend', handleTouchEnd);
     svg.on('touchcancel', handleTouchEnd);
 
     // Zoom events
-    svg.on('wheel', handleWheel);
+    svg.on('wheel', handleWheel, { passive: false });
 }
+
+// Helper to apply theme colors
+function applyTheme(isNight) {
+    const theme = isNight ? config.themes.dark : config.themes.light;
+    config.landColor = theme.landColor;
+    config.oceanColor = theme.oceanColor;
+    config.landStrokeColor = theme.landStrokeColor;
+    console.log(`UI: Applied ${isNight ? 'Dark' : 'Light'} Theme`);
+
+    document.body.classList.toggle('night-mode', isNight);
+    document.body.classList.toggle('light-mode', !isNight);
+
+    if (callbacks && callbacks.scheduleRender) {
+        callbacks.scheduleRender(true); // Force render after theme change
+    }
+}
+
+// Helper to add listeners to checkboxes/toggles and link to config
+function setupToggle(elementId, configKey, renderOnChange = false, customCallback = null) {
+    const element = document.getElementById(elementId);
+    if (element) {
+        if (config.hasOwnProperty(configKey)) {
+            element.checked = config[configKey]; // Set initial state
+            element.addEventListener('change', () => {
+                const newValue = element.checked;
+                config[configKey] = newValue;
+                console.log(`UI Toggle: ${configKey} set to ${config[configKey]}`);
+
+                if (customCallback) {
+                    customCallback(newValue); // Execute custom logic
+                }
+
+                // Trigger render if flag is set AND no custom callback handles it
+                if (renderOnChange && !customCallback && callbacks && callbacks.scheduleRender) {
+                    callbacks.scheduleRender(true);
+                }
+
+                if (configKey === 'overlayType') { // Handle overlay visibility
+                    updateOverlayControlsVisibility();
+                }
+            });
+        } else {
+            console.warn(`Config key '${configKey}' not found for toggle element '#${elementId}'. Hiding element.`);
+            element.style.display = 'none';
+            const parentContainer = element.closest('.layer-item, .option-item, .overlay-option-item');
+            if (parentContainer) parentContainer.style.display = 'none';
+        }
+    } else {
+        // console.warn(`Toggle element '#${elementId}' not found.`);
+    }
+    return element;
+}
+
+
+function setupPanelControlListeners() {
+    console.log("Setting up panel control listeners...");
+
+    // --- Search Panel ---
+    const searchInput = document.querySelector('#search-panel input[type="text"]');
+    if(searchInput) {
+        searchInput.addEventListener('change', (event) => { /* ... Search logic ... */ });
+        searchInput.addEventListener('keydown', (event) => { if (event.key === 'Enter') { /* ... Search logic ... */ } });
+    } else console.warn("Search input not found in #search-panel");
+
+    // --- Display Panel ---
+    setupToggle('toggle-layer-airports', 'showAirports', true);
+    setupToggle('toggle-layer-airspace', 'showAirspaces', true);
+    setupToggle('toggle-night-mode', 'nightMode', false, applyTheme);
+    setupToggle('toggle-moving-map', 'movingMap', false);
+    setupToggle('show-graticule', 'showGraticule', true);
+    setupToggle('outline-only', 'outlineOnly', true);
+
+    // --- Overlays Panel ---
+    const magVarToggle = document.getElementById('toggle-magvar-overlay');
+    if (magVarToggle) {
+        magVarToggle.checked = (config.overlayType === 'magvar');
+        magVarToggle.addEventListener('change', () => {
+            config.overlayType = magVarToggle.checked ? 'magvar' : 'none';
+            console.log(`Overlay Type changed to: ${config.overlayType}`);
+            updateOverlayControlsVisibility();
+            callbacks.scheduleRender(true);
+        });
+    } else {
+        console.warn("Overlay toggle '#toggle-magvar-overlay' not found.");
+    }
+
+    const modeButtons = {
+        vector: document.getElementById('mode-vector'),
+        isoline: document.getElementById('mode-isoline')
+    };
+    const updateModeButtons = (activeMode) => {
+        for (const mode in modeButtons) {
+            if (modeButtons[mode]) {
+                modeButtons[mode].classList.toggle('active', mode === activeMode);
+            }
+        }
+        updateOverlayControlsVisibility();
+    };
+    if (modeButtons[config.displayMode]) updateModeButtons(config.displayMode);
+    for (const mode in modeButtons) {
+        if (modeButtons[mode]) {
+            modeButtons[mode].addEventListener('click', () => {
+                config.displayMode = mode;
+                updateModeButtons(mode);
+                console.log(`Display Mode changed to: ${config.displayMode}`);
+                callbacks.scheduleRender(true);
+            });
+        } else console.warn(`Mode button for '${mode}' not found.`);
+    }
+
+    const heightLevelSlider = document.getElementById('height-level');
+    const heightValueSpan = document.getElementById('height-value');
+    if (heightLevelSlider && heightValueSpan) {
+        heightLevelSlider.max = config.maxAltitudeKm;
+        heightLevelSlider.value = config.altitudeKm;
+        heightValueSpan.textContent = `${config.altitudeKm} km`;
+        heightLevelSlider.addEventListener('input', () => {
+            config.altitudeKm = parseFloat(heightLevelSlider.value);
+            heightValueSpan.textContent = `${config.altitudeKm} km`;
+            if(callbacks.scheduleRender) { clearTimeout(appState.renderTimeout); appState.renderTimeout = setTimeout(() => callbacks.scheduleRender(true), 50); }
+        });
+    } else {
+        if(!heightLevelSlider) console.warn("Slider 'height-level' not found.");
+        if(!heightValueSpan) console.warn("Span 'height-value' not found.");
+    }
+
+    if (!config.hasOwnProperty('decimalYear') || config.decimalYear === null) {
+        config.decimalYear = getCurrentDecimalYear();
+    }
+    const dateInput = document.getElementById('date-year');
+    const dateValueSpan = document.getElementById('date-value');
+    if (dateInput && dateValueSpan) {
+        const currentYear = new Date().getFullYear();
+        dateInput.min = Math.min(2020, Math.floor(config.decimalYear));
+        dateInput.max = Math.max(currentYear + 5, Math.ceil(config.decimalYear));
+        dateInput.step = 0.1;
+        dateInput.value = config.decimalYear.toFixed(1);
+        dateValueSpan.textContent = config.decimalYear.toFixed(1);
+        dateInput.addEventListener('input', () => {
+            config.decimalYear = parseFloat(dateInput.value);
+            dateValueSpan.textContent = config.decimalYear.toFixed(1);
+            if(callbacks.scheduleRender) { clearTimeout(appState.renderTimeout); appState.renderTimeout = setTimeout(() => callbacks.scheduleRender(true), 50); }
+        });
+    } else {
+        if(!dateInput) console.warn("Input '#date-year' not found.");
+        if(!dateValueSpan) console.warn("Span '#date-value' not found.");
+    }
+
+    const overlayOpacitySlider = document.getElementById('overlay-opacity');
+    if(overlayOpacitySlider) {
+        overlayOpacitySlider.value = config.overlayOpacity * 100;
+        overlayOpacitySlider.addEventListener('input', () => {
+            config.overlayOpacity = parseFloat(overlayOpacitySlider.value) / 100;
+            if(overlayGroup) overlayGroup.style('opacity', config.overlayOpacity);
+        });
+    } else console.warn("Slider 'overlay-opacity' not found.");
+
+    const vectorDensitySlider = document.getElementById('vector-density');
+    if(vectorDensitySlider) {
+        vectorDensitySlider.value = config.vectorDensity;
+        vectorDensitySlider.addEventListener('input', () => {
+            config.vectorDensity = parseFloat(vectorDensitySlider.value);
+            if(callbacks.scheduleRender) { clearTimeout(appState.renderTimeout); appState.renderTimeout = setTimeout(() => callbacks.scheduleRender(true), 50); }
+        });
+    } else console.warn("Slider 'vector-density' not found.");
+
+    const isolineSpacingSelect = document.getElementById('isoline-spacing');
+    if(isolineSpacingSelect) {
+        isolineSpacingSelect.value = config.isolineSpacing;
+        isolineSpacingSelect.addEventListener('change', () => {
+            config.isolineSpacing = isolineSpacingSelect.value;
+            callbacks.scheduleRender(true);
+        });
+    } else console.warn("Select 'isoline-spacing' not found.");
+
+    updateOverlayControlsVisibility();
+
+    // --- Views Panel ---
+    const projectionSelect = document.getElementById('projection-select');
+    if (projectionSelect) {
+        projectionSelect.value = config.projection;
+        projectionSelect.addEventListener('change', () => {
+            config.projection = projectionSelect.value;
+            callbacks.scheduleRender(true);
+            if (callbacks.projectionChanged) callbacks.projectionChanged();
+        });
+    } else console.warn("Select 'projection-select' not found.");
+
+    const rotationSpeedSlider = document.getElementById('rotation-speed');
+    if (rotationSpeedSlider) {
+        rotationSpeedSlider.value = config.rotationSpeed;
+        rotationSpeedSlider.addEventListener('input', () => {
+            const speed = parseFloat(rotationSpeedSlider.value);
+            config.rotationSpeed = speed;
+            if (callbacks.startStopAutoRotate) callbacks.startStopAutoRotate(speed > 0);
+        });
+        if (config.rotationSpeed > 0 && callbacks.startStopAutoRotate) { callbacks.startStopAutoRotate(true); }
+    } else console.warn("Slider 'rotation-speed' not found.");
+
+    const viewButtons = document.querySelectorAll('#views-panel .btn-group button');
+    if (viewButtons.length > 0) {
+        viewButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const view = button.id.replace('view-', '');
+                const viewTargets = { 'atlantic': [-30, 30], 'pacific': [-170, 0], 'north-america': [-100, 40], 'south-america': [-60, -20], 'europe': [15, 50], 'africa': [20, 0], 'asia': [90, 40], 'australia': [135, -25] };
+                if (viewTargets[view] && callbacks.navigateTo) { callbacks.navigateTo(...viewTargets[view]); }
+            });
+        });
+    } else console.warn("View buttons not found in #views-panel.");
+
+    // --- Settings Panel ---
+    const gridOpacitySlider = document.getElementById('grid-opacity');
+    if(gridOpacitySlider) {
+        gridOpacitySlider.value = config.graticuleOpacity * 100;
+        gridOpacitySlider.addEventListener('input', () => {
+            config.graticuleOpacity = parseFloat(gridOpacitySlider.value) / 100;
+            if(callbacks.scheduleRender) { clearTimeout(appState.renderTimeout); appState.renderTimeout = setTimeout(() => callbacks.scheduleRender(true), 50); }
+        });
+    } else console.warn("Slider 'grid-opacity' not found.");
+
+    const gridColorSelect = document.getElementById('grid-color');
+    if(gridColorSelect) {
+        gridColorSelect.value = config.graticuleColor;
+        gridColorSelect.addEventListener('change', () => {
+            config.graticuleColor = gridColorSelect.value;
+            callbacks.scheduleRender(true);
+        });
+    } else console.warn("Select 'grid-color' not found.");
+
+    console.log("Panel control listeners setup complete.");
+}
+
+
+function updateOverlayControlsVisibility() {
+    const showOverlayControls = config.overlayType !== 'none';
+    const overlayOptionsSection = document.querySelector('#overlays-panel .menu-section:nth-child(2)');
+    if(overlayOptionsSection) {
+        overlayOptionsSection.style.display = showOverlayControls ? '' : 'none';
+    }
+
+    if(showOverlayControls) {
+        const vectorDensityControl = document.getElementById('vector-density')?.closest('.overlay-option-item');
+        const isolineSpacingControl = document.getElementById('isoline-spacing')?.closest('.overlay-option-item');
+
+        if (vectorDensityControl) {
+            vectorDensityControl.style.display = (config.displayMode === 'vector') ? '' : 'none';
+        }
+        if (isolineSpacingControl) {
+            isolineSpacingControl.style.display = (config.displayMode === 'isoline') ? '' : 'none';
+        }
+    }
+    const legend = document.getElementById('overlay-legend');
+    if(legend) legend.classList.toggle('visible', showOverlayControls);
+}
+
+
+
+function setupTopBarListeners() {
+    // ... (Top bar logic remains largely the same) ...
+    console.log("Setting up top bar listeners...");
+    const topBarButtons = document.querySelectorAll('#top-control-bar .top-bar-button:not(.square-button):not(.top-bar-toggle)');
+    topBarButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const isActive = button.classList.contains('active');
+            if (!isActive) {
+                topBarButtons.forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+            } else {
+                button.classList.remove('active');
+            }
+        });
+    });
+    // Ensure only one is active initially
+    let activeFound = false;
+    topBarButtons.forEach(button => {
+        if (button.classList.contains('active')) { if (!activeFound) { activeFound = true; } else { button.classList.remove('active'); } }
+    });
+    console.log("Top bar listeners setup complete.");
+}
+
+// --- Globe Interaction Handlers ---
 
 function handleMouseDown(event) {
+    if (event.button !== 0) return; // Only left click
+    event.preventDefault();
     isDragging = true;
-    lastMouseX = event.clientX;
-    lastMouseY = event.clientY;
+    dragStartCoords = { x: event.clientX, y: event.clientY };
+    dragStartRotation = [...appState.currentRotation];
+    svg.style('cursor', 'grabbing');
+    if (callbacks.startStopAutoRotate) callbacks.startStopAutoRotate(false);
+    hideTooltip();
 }
 
-function handleMouseMove(event) {
+function handleDragMove(event) {
     if (!isDragging) return;
+    event.preventDefault();
 
-    const dx = event.clientX - lastMouseX;
-    const dy = event.clientY - lastMouseY;
+    const dx = event.clientX - dragStartCoords.x;
+    const dy = event.clientY - dragStartCoords.y;
+    const sensitivityFactor = 1 / (appState.currentScale * 0.015); // Simplified sensitivity
+    const effectiveSensitivity = Math.max(0.05, Math.min(1, config.sensitivity * sensitivityFactor)); // Adjusted clamps
 
-    const rotation = [...appState.currentRotation];
-    rotation[0] += dx / config.sensitivity;
-    rotation[1] += dy / config.sensitivity;
+    const rotation = [...dragStartRotation];
+    rotation[0] = dragStartRotation[0] + dx * effectiveSensitivity; // Simplified calculation
+    rotation[1] = dragStartRotation[1] - dy * effectiveSensitivity; // Simplified calculation
+    rotation[1] = Math.max(-90, Math.min(90, rotation[1])); // Clamp latitude
 
-    callbacks.updateRotation(rotation);
-    callbacks.scheduleRender(); // Use scheduleRender here
-
-    lastMouseX = event.clientX;
-    lastMouseY = event.clientY;
+    if (callbacks.updateRotation) callbacks.updateRotation(rotation);
+    // Schedule a render, but don't force high-res during drag
+    if (callbacks.scheduleRender) callbacks.scheduleRender(false);
 }
 
-function handleMouseUp() {
-    isDragging = false;
+function handleMouseUp(event) {
+    if (event.button !== 0) return;
+    if (isDragging) {
+        isDragging = false;
+        svg.style('cursor', 'grab');
+        if (config.autoRotate && config.rotationSpeed > 0 && callbacks.startStopAutoRotate) {
+            callbacks.startStopAutoRotate(true);
+        }
+        // Schedule a final high-quality render after drag ends
+        if (callbacks.scheduleRender) callbacks.scheduleRender(true);
+    }
+}
+
+function handleMouseLeave() {
+    if (isDragging) {
+        isDragging = false;
+        svg.style('cursor', 'default');
+        if (config.autoRotate && config.rotationSpeed > 0 && callbacks.startStopAutoRotate) {
+            // Optionally restart auto-rotate here if needed
+            // callbacks.startStopAutoRotate(true);
+        }
+        if (callbacks.scheduleRender) callbacks.scheduleRender(true);
+    }
+    hideTooltip();
 }
 
 function handleTouchStart(event) {
     if (event.touches.length === 1) {
+        event.preventDefault();
         isDragging = true;
-        lastMouseX = event.touches[0].clientX;
-        lastMouseY = event.touches[0].clientY;
+        const touch = event.touches[0];
+        dragStartCoords = { x: touch.clientX, y: touch.clientY };
+        dragStartRotation = [...appState.currentRotation];
+        if (callbacks.startStopAutoRotate) callbacks.startStopAutoRotate(false);
+        hideTooltip();
     }
 }
 
 function handleTouchMove(event) {
     if (isDragging && event.touches.length === 1) {
-        const dx = event.touches[0].clientX - lastMouseX;
-        const dy = event.touches[0].clientY - lastMouseY;
+        event.preventDefault();
+        const touch = event.touches[0];
+        const dx = touch.clientX - dragStartCoords.x;
+        const dy = touch.clientY - dragStartCoords.y;
+        const sensitivityFactor = 1 / (appState.currentScale * 0.015);
+        const effectiveSensitivity = Math.max(0.05, Math.min(1, config.sensitivity * sensitivityFactor));
 
-        const rotation = [...appState.currentRotation];
-        rotation[0] += dx / config.sensitivity;
-        rotation[1] += dy / config.sensitivity;
+        const rotation = [...dragStartRotation];
+        rotation[0] = dragStartRotation[0] + dx * effectiveSensitivity;
+        rotation[1] = dragStartRotation[1] - dy * effectiveSensitivity;
+        rotation[1] = Math.max(-90, Math.min(90, rotation[1]));
 
-        callbacks.updateRotation(rotation);
-        callbacks.scheduleRender(); // Use scheduleRender here
-
-        lastMouseX = event.touches[0].clientX;
-        lastMouseY = event.touches[0].clientY;
+        if (callbacks.updateRotation) callbacks.updateRotation(rotation);
+        if (callbacks.scheduleRender) callbacks.scheduleRender(false);
     }
 }
 
-function handleTouchEnd() {
-    isDragging = false;
+function handleTouchEnd(event) {
+    if (isDragging && event.touches.length === 0) {
+        isDragging = false;
+        if (config.autoRotate && config.rotationSpeed > 0 && callbacks.startStopAutoRotate) {
+            callbacks.startStopAutoRotate(true);
+        }
+        if (callbacks.scheduleRender) callbacks.scheduleRender(true);
+    }
 }
 
 function handleWheel(event) {
     event.preventDefault();
-    const scaleFactor = event.deltaY > 0 ? 0.9 : 1.1;
-    const newScale = Math.max(config.minScale, Math.min(config.maxScale, appState.currentScale * scaleFactor));
-    callbacks.updateScale(newScale);
-    callbacks.scheduleRender(); // Use scheduleRender here
-}
+    if (callbacks.startStopAutoRotate) callbacks.startStopAutoRotate(false);
 
-function handleMouseOver(event) {
-    const [lon, lat] = screenToLonLat(event.offsetX, event.offsetY, appState.currentScale, appState.currentRotation, config.width, config.height);
-    if (lon && lat) {
-        const formattedLon = lon.toFixed(2);
-        const formattedLat = lat.toFixed(2);
-        tooltip.textContent = `Lon: ${formattedLon}, Lat: ${formattedLat}`;
-        tooltip.style.left = `${event.pageX + 10}px`;
-        tooltip.style.top = `${event.pageY + 10}px`;
-        tooltip.style.opacity = 1;
+    const scaleFactor = event.deltaY < 0 ? 1.15 : 1 / 1.15;
+    const newScale = Math.max(config.minScale, Math.min(config.maxScale, appState.currentScale * scaleFactor));
+
+    if (Math.abs(newScale - appState.currentScale) > 0.01) {
+        // Call updateScale callback to update appState
+        if (callbacks.updateScale) callbacks.updateScale(newScale);
+        // Schedule a render (force=true to ensure LOD check happens)
+        if (callbacks.scheduleRender) callbacks.scheduleRender(true);
     }
 }
 
-function handleMouseOut() {
-    tooltip.style.opacity = 0;
-}
+// --- Tooltip Handlers ---
+function handleTooltipMove(event) {
+    if (isDragging || !tooltip) return;
+    const [pointerX, pointerY] = d3.pointer(event, svg.node());
+    clearTimeout(tooltipTimeout);
 
-function setupMenu() {
-    const menuButton = document.getElementById('menu-button');
-    const menuPanel = document.getElementById('menu-panel');
-    const settingsButton = document.getElementById('settings-button');
-    const settingsPanel = document.getElementById('settings-panel');
-    const backButton = document.getElementById('back-button');
+    tooltipTimeout = setTimeout(() => {
+        if (!svg.node().contains(event.target)) {
+            hideTooltip();
+            return;
+        }
+        const coords = screenToLonLat(pointerX, pointerY, appState.currentScale, appState.currentRotation, config.width, config.height, config.projection);
+        if (coords) {
+            const [lon, lat] = coords;
+            const formattedLon = lon.toFixed(2);
+            const formattedLat = lat.toFixed(2);
+            let tooltipContent = `Lon: ${formattedLon}°<br>Lat: ${formattedLat}°`;
 
-    menuButton.addEventListener('click', () => {
-        menuPanel.classList.toggle('visible');
-        settingsPanel.classList.remove('visible');
-    });
-
-    settingsButton.addEventListener('click', () => {
-        menuPanel.classList.remove('visible');
-        settingsPanel.classList.add('visible');
-    });
-
-    backButton.addEventListener('click', () => {
-        menuPanel.classList.add('visible');
-        settingsPanel.classList.remove('visible');
-    });
-
-    // View buttons
-    const viewButtons = document.querySelectorAll('.btn-group button');
-    viewButtons.forEach(button => {
-        button.addEventListener('click', () => {
-            const view = button.id.replace('view-', '');
-            switch (view) {
-                case 'atlantic': callbacks.navigateTo(-30, 30); break;
-                case 'pacific': callbacks.navigateTo(180, 0); break;
-                case 'north-america': callbacks.navigateTo(-100, 40); break;
-                case 'south-america': callbacks.navigateTo(-60, -20); break;
-                case 'europe': callbacks.navigateTo(15, 50); break;
-                case 'africa': callbacks.navigateTo(20, 0); break;
-                case 'asia': callbacks.navigateTo(100, 30); break;
-                case 'australia': callbacks.navigateTo(135, -25); break;
+            if (config.overlayType !== 'none') {
+                const calculationYear = config.decimalYear || getCurrentDecimalYear();
+                const overlayValue = getOverlayValue(lon, lat, config.altitudeKm, calculationYear, config.overlayType);
+                if (overlayValue !== null && isFinite(overlayValue)) {
+                    const overlayName = config.overlayType === 'magvar' ? 'MagVar' : config.overlayType;
+                    tooltipContent += `<br>${overlayName}: ${formatOverlayValue(overlayValue, config.overlayType)}`;
+                    tooltipContent += `<br><span class="tooltip-context">Alt: ${config.altitudeKm.toFixed(0)} km, Date: ${calculationYear.toFixed(1)}</span>`;
+                } else if (overlayValue !== null) {
+                    tooltipContent += `<br><span class="tooltip-context">Overlay: Error</span>`;
+                }
             }
-        });
-    });
-
-    // Projection select
-    const projectionSelect = document.getElementById('projection-select');
-    projectionSelect.addEventListener('change', () => {
-        config.projection = projectionSelect.value;
-        callbacks.scheduleRender(true); // Force redraw
-    });
-
-    // Graticule checkbox
-    const showGraticuleCheckbox = document.getElementById('show-graticule');
-    showGraticuleCheckbox.addEventListener('change', () => {
-        config.showGraticule = showGraticuleCheckbox.checked;
-        callbacks.scheduleRender(true); // Force redraw
-    });
-
-    // Grid dots checkbox
-    const showGridDotsCheckbox = document.getElementById('show-grid-dots');
-    showGridDotsCheckbox.addEventListener('change', () => {
-        config.showGridDots = showGridDotsCheckbox.checked;
-        callbacks.scheduleRender(true); // Force redraw
-    });
-
-    // Outline only checkbox
-    const outlineOnlyCheckbox = document.getElementById('outline-only');
-    outlineOnlyCheckbox.addEventListener('change', () => {
-        config.outlineOnly = outlineOnlyCheckbox.checked;
-        callbacks.scheduleRender(true); // Force redraw
-    });
-
-    // Show labels checkbox
-    const showLabelsCheckbox = document.getElementById('show-labels');
-    showLabelsCheckbox.addEventListener('change', () => {
-        config.showLabels = showLabelsCheckbox.checked;
-        callbacks.scheduleRender(true); // Force redraw
-    });
-
-    // Rotation speed slider
-    const rotationSpeedSlider = document.getElementById('rotation-speed');
-    rotationSpeedSlider.addEventListener('input', () => {
-        config.rotationSpeed = parseFloat(rotationSpeedSlider.value);
-        callbacks.startStopAutoRotate(config.rotationSpeed > 0);
-    });
+            tooltip.innerHTML = tooltipContent;
+            tooltip.style.left = `${event.pageX + 15}px`;
+            tooltip.style.top = `${event.pageY + 10}px`;
+            tooltip.style.opacity = 1;
+            tooltip.style.pointerEvents = 'auto';
+        } else {
+            hideTooltip();
+        }
+    }, 100);
 }
 
-function setupSettingsPanel() {
-    // Color options
-    const colorOptions = document.querySelectorAll('.color-option');
-    colorOptions.forEach(option => {
-        option.addEventListener('click', () => {
-            const color = option.dataset.color;
-            const parent = option.parentElement;
-            const label = parent.querySelector('span').textContent;
-            if (label === 'Land:') {
-                config.landColor = color;
-            } else if (label === 'Ocean:') {
-                config.oceanColor = color;
-            }
-            callbacks.scheduleRender(true); // Force redraw
-        });
-    });
-
-    // Grid opacity slider
-    const gridOpacitySlider = document.getElementById('grid-opacity');
-    gridOpacitySlider.addEventListener('input', () => {
-        config.graticuleOpacity = parseFloat(gridOpacitySlider.value) / 100;
-        callbacks.scheduleRender(true); // Force redraw
-    });
-
-    // Grid color select
-    const gridColorSelect = document.getElementById('grid-color');
-    gridColorSelect.addEventListener('change', () => {
-        config.graticuleColor = gridColorSelect.value;
-        callbacks.scheduleRender(true); // Force redraw
-    });
-
-    // Overlay opacity slider
-    const overlayOpacitySlider = document.getElementById('overlay-opacity');
-    overlayOpacitySlider.addEventListener('input', () => {
-        config.overlayOpacity = parseFloat(overlayOpacitySlider.value) / 100;
-        callbacks.scheduleRender(true); // Force redraw
-    });
-
-    // Vector density slider
-    const vectorDensitySlider = document.getElementById('vector-density');
-    vectorDensitySlider.addEventListener('input', () => {
-        config.vectorDensity = parseFloat(vectorDensitySlider.value);
-        callbacks.scheduleRender(true); // Force redraw
-    });
-
-    // Isoline spacing select
-    const isolineSpacingSelect = document.getElementById('isoline-spacing');
-    isolineSpacingSelect.addEventListener('change', () => {
-        config.isolineSpacing = isolineSpacingSelect.value;
-        callbacks.scheduleRender(true); // Force redraw
-    });
+function handleTooltipOut(event) {
+    if (!svg.node().contains(event.relatedTarget)) {
+        clearTimeout(tooltipTimeout);
+        hideTooltip();
+    }
 }
 
-function setupOverlayControls() {
-    // Overlay type select
-    const overlayTypeSelect = document.getElementById('overlay-type');
-    overlayTypeSelect.addEventListener('change', () => {
-        config.overlayType = overlayTypeSelect.value;
-        callbacks.scheduleRender(true); // Force redraw
-    });
-
-    // Display mode buttons
-    const modeGradientButton = document.getElementById('mode-gradient');
-    const modeVectorButton = document.getElementById('mode-vector');
-    const modeIsolineButton = document.getElementById('mode-isoline');
-
-    modeGradientButton.addEventListener('click', () => {
-        config.displayMode = 'gradient';
-        modeGradientButton.classList.add('active');
-        modeVectorButton.classList.remove('active');
-        modeIsolineButton.classList.remove('active');
-        callbacks.scheduleRender(true); // Force redraw
-    });
-
-    modeVectorButton.addEventListener('click', () => {
-        config.displayMode = 'vector';
-        modeGradientButton.classList.remove('active');
-        modeVectorButton.classList.add('active');
-        modeIsolineButton.classList.remove('active');
-        callbacks.scheduleRender(true); // Force redraw
-    });
-
-    modeIsolineButton.addEventListener('click', () => {
-        config.displayMode = 'isoline';
-        modeGradientButton.classList.remove('active');
-        modeVectorButton.classList.remove('active');
-        modeIsolineButton.classList.add('active');
-        callbacks.scheduleRender(true); // Force redraw
-    });
-
-    // Altitude slider
-    const heightLevelSlider = document.getElementById('height-level');
-    const heightValueSpan = document.getElementById('height-value');
-    heightLevelSlider.addEventListener('input', () => {
-        config.altitudeKm = parseFloat(heightLevelSlider.value);
-        heightValueSpan.textContent = `${config.altitudeKm} km`;
-        callbacks.scheduleRender(true); // Force redraw
-    });
+function hideTooltip() {
+    clearTimeout(tooltipTimeout);
+    if (tooltip) {
+        tooltip.style.opacity = 0;
+        tooltip.style.pointerEvents = 'none';
+    }
 }
