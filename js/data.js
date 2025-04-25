@@ -53,8 +53,7 @@ async function loadGeoJsonData(url, dataKey) {
         }
         // Check if the response is JSON before parsing
         const contentType = response.headers.get("content-type");
-        if (contentType && contentType.indexOf("application/json") !== -1) {
-            const geoJsonData = await response.json();
+         if (contentType && (contentType.includes("application/json") || contentType.includes("application/geo+json"))) {            const geoJsonData = await response.json();
             dataAvailable[dataKey] = true;
             console.log(`${dataKey} GeoJSON data loaded successfully from ${url}.`);
             return geoJsonData;
