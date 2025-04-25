@@ -51,10 +51,16 @@ async function loadGeoJsonData(url, dataKey) {
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status} for ${url}`);
         }
-        const geoJsonData = await response.json();
-        dataAvailable[dataKey] = true;
-        console.log(`${dataKey} GeoJSON data loaded successfully from ${url}.`);
-        return geoJsonData;
+        // Check if the response is JSON before parsing
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.indexOf("application/json") !== -1) {
+            const geoJsonData = await response.json();
+            dataAvailable[dataKey] = true;
+            console.log(`${dataKey} GeoJSON data loaded successfully from ${url}.`);
+            return geoJsonData;
+        } else {
+            throw new Error(`Response is not JSON for ${url}. Content-Type: ${contentType}`);
+        }
     } catch (error) {
         console.error(`Error loading ${dataKey} GeoJSON from ${url}:`, error);
         updateDataSourceInfo(`Error Loading ${dataKey} GeoJSON`, 'N/A');
@@ -174,9 +180,3 @@ function updateDataAvailabilityUI() {
         }
     }
 }
-
-// No longer needed as we load GeoJSON directly
-// /**
-//  * Extract topojson features safely
-//  */
-// export function extractTopoFeatures(topologyData, objectName) { ... }
