@@ -542,14 +542,12 @@ input:checked + .slider:before { transform: translateX(14px); }
 
 /* Main Globe Area */
 #globe {
-    position: fixed;
-    top: 0; /* Start from the top */
-    height: 100vh; /* Full height */
-    z-index: 1;
-    left: 60px;
-    width: calc(100% - 60px);
-    transition: left 0.25s ease-in-out, width 0.25s ease-in-out; /* Keep panel transition */
-    /* Removed top and height transitions */
+    position: absolute;
+    left: 0; top: 0; right: 0; bottom: 0;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    z-index: 0;
 }
 body.panel-visible #globe {
     left: calc(60px + 320px);

@@ -404,13 +404,13 @@ function handleDragMove(event) {
     const dx = event.clientX - dragStartCoords.x;
     const dy = event.clientY - dragStartCoords.y;
 
-    // Calculate degrees per pixel based on current scale (radius)
+    // degrees per pixel
     const radius = appState.currentScale;
     const degPerPixel = 360 / (2 * Math.PI * radius);
 
     const rotation = [...dragStartRotation];
-    rotation[0] = dragStartRotation[0] + dx * degPerPixel; // Longitude
-    rotation[1] = dragStartRotation[1] + dy * degPerPixel; // Latitude
+    rotation[0] = dragStartRotation[0] + dx * degPerPixel; // Longitude: вправо — восток
+    rotation[1] = dragStartRotation[1] - dy * degPerPixel; // Latitude: вверх — север
     rotation[1] = Math.max(-90, Math.min(90, rotation[1])); // Clamp latitude
 
     if (callbacks.updateRotation) callbacks.updateRotation(rotation);
@@ -480,7 +480,7 @@ function handleTouchMove(event) {
 
         const rotation = [...dragStartRotation];
         rotation[0] = dragStartRotation[0] + dx * effectiveSensitivity;
-        rotation[1] = dragStartRotation[1] - dy * effectiveSensitivity;
+        rotation[1] = dragStartRotation[1] + dy * effectiveSensitivity; // Инверсия
         rotation[1] = Math.max(-90, Math.min(90, rotation[1]));
 
         if (callbacks.updateRotation) callbacks.updateRotation(rotation);

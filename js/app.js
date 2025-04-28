@@ -28,6 +28,18 @@ let svg, globeGroup, earthBoundary, overlayGroup, loadingText;
 // --- Helper Functions ---
 
 /**
+ * Calculates the width of the left sidebar.
+ * @returns {number} The width of the left sidebar in pixels.
+ */
+function getSidebarWidth() {
+    const sidebar = document.getElementById('left-sidebar');
+    if (sidebar) {
+        return sidebar.offsetWidth;
+    }
+    return 0; // Default to 0 if sidebar not found
+}
+
+/**
  * Updates the application state with a new rotation.
  * @param {number[]} newRotation - The new rotation values [longitude, latitude, roll].
  */
@@ -112,9 +124,9 @@ function showLoadingMessage(message, isError = false) {
             .attr('y', config.height / 2)
             .attr('text-anchor', 'middle')
             .attr('dy', '0.35em')
-            .attr('fill', isError ? '#ff8888' : config['--navigraph-text-primary'] || '#ffffff');
+            .attr('fill', isError ? '#ff8888' : config.themes.light.landColor || '#ffffff'); // Changed to use theme colors
     }
-    loadingText.text(message).attr('fill', isError ? '#ff8888' : config['--navigraph-text-primary'] || '#ffffff');
+    loadingText.text(message).attr('fill', isError ? '#ff8888' : config.themes.light.landColor || '#ffffff'); // Changed to use theme colors
     loadingText.style('display', 'block');
 }
 
@@ -274,7 +286,7 @@ function startStopAutoRotate(start) {
  * Adjusts globe size and projection center on window resize.
  */
 function handleResize() {
-    config.width = window.innerWidth - 60; // Adjust for sidebar
+    config.width = window.innerWidth - getSidebarWidth(); // Adjust for sidebar
     config.height = window.innerHeight;
 
     if (svg) {
@@ -310,8 +322,8 @@ function stopRotation() {
 function init() {
     console.log("Initializing WGS84 Globe...");
 
-    // Initial resize calculation
-    config.width = window.innerWidth - 60; // Account for fixed sidebar
+    // Calculate initial dimensions, accounting for sidebar
+    config.width = window.innerWidth - getSidebarWidth();
     config.height = window.innerHeight;
 
     setupSvg(); // Setup SVG first

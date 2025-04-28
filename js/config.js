@@ -35,8 +35,8 @@ const zoomLevelThresholds = [
 // Default application configuration
 export const config = {
     // Core Display & Interaction
-    width: window.innerWidth,
-    height: window.innerHeight,
+    // width: window.innerWidth, // REMOVED
+    // height: window.innerHeight, // REMOVED
     sensitivity: 75,
     defaultScale: 280,
     maxScale: 2900,
