@@ -509,9 +509,7 @@ function handleWheel(event) {
     const newScale = Math.max(config.minScale, Math.min(config.maxScale, appState.currentScale * scaleFactor));
 
     if (Math.abs(newScale - appState.currentScale) > 0.01) {
-        // Call updateScale callback to update appState
         if (callbacks.updateScale) callbacks.updateScale(newScale);
-        // Schedule a render (force=true to ensure LOD check happens)
         if (callbacks.scheduleRender) callbacks.scheduleRender(true);
     }
 }
