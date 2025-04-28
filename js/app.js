@@ -328,7 +328,7 @@ function init() {
         startStopAutoRotate,
         startRotation,
         stopRotation
-    });
+    }, overlayGroup); // Pass overlayGroup here
 
     // Add resize listener
     window.addEventListener('resize', handleResize);

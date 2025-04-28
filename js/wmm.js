@@ -25,11 +25,8 @@ function decimalYearToDate(decimalYear) {
     const remainder = decimalYear - year;
     const daysInYear = (year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0)) ? 366 : 365;
     const dayOfYear = Math.floor(remainder * daysInYear); // 0-based day index
-    const date = new Date(Date.UTC(year, 0, 1)); // Start of the year
-    date.setUTCDate(date.getUTCDate() + dayOfYear); // Add the calculated days
-    // Add fractional day as milliseconds for more precision if needed, although geomagnetism might not use it
-    const fractionalDayMs = (remainder * daysInYear - dayOfYear) * 24 * 60 * 60 * 1000;
-    date.setUTCMilliseconds(date.getUTCMilliseconds() + fractionalDayMs);
+    const date = new Date(Date.UTC(year, 0, 0)); // Start of the year
+    date.setUTCDate(dayOfYear); // Add the calculated days
     return date;
 }
 
@@ -81,16 +78,16 @@ export function calculateMagneticVariation(longitude, latitude, altitudeKm, deci
     }
 }
 
-/**
- * Placeholder for any asynchronous initialization if needed in the future.
- * Currently, geomagnetism initializes synchronously with bundled coefficients.
- * @returns {Promise<boolean>} Always resolves true currently.
- */
-export async function loadWmmData() {
-    // No external WMM.COF loading needed with this library
-    console.log("Geomagnetism library initialized with internal WMM model.");
-    return true; // Indicate success
-}
+// /**
+//  * Placeholder for any asynchronous initialization if needed in the future.
+//  * Currently, geomagnetism initializes synchronously with bundled coefficients.
+//  * @returns {Promise<boolean>} Always resolves true currently.
+//  */
+// export async function loadWmmData() {
+//     // No external WMM.COF loading needed with this library
+//     console.log("Geomagnetism library initialized with internal WMM model.");
+//     return true; // Indicate success
+// }
 
 // Remove the old functions and variables:
 // - factorial

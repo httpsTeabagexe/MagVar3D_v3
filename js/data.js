@@ -1,6 +1,6 @@
 // js/data.js
 import { config } from './config.js';
-import { loadWmmData } from './wmm.js';
+// import { loadWmmData } from './wmm.js';
 
 // Data availability flags
 export const dataAvailable = {
@@ -16,6 +16,7 @@ export const dataAvailable = {
     airspace: false,    // No placeholder data yet
     airways: false      // No placeholder data yet
 };
+dataAvailable.magvar = true; //mark magvar as availible
 
 // Store loaded GeoJSON land data
 export let landDataLowRes = null;
@@ -80,10 +81,10 @@ export async function loadAllData() {
         landDataHighRes = data;
         // Don't update timestamp here, assume low-res source is the main one for display
     });
-    const wmmPromise = loadWmmData(config.wmmCofUrl).then(success => {
-        dataAvailable.magvar = success;
-        if(!success) updateDataSourceInfo('WMM Load Failed', config.dataSourceTimestamp);
-    });
+    // const wmmPromise = loadWmmData(config.wmmCofUrl).then(success => {
+    //     dataAvailable.magvar = success;
+    //     if(!success) updateDataSourceInfo('WMM Load Failed', config.dataSourceTimestamp);
+    // });
 
     // Simulate loading other data (even though it's placeholder)
     await new Promise(resolve => setTimeout(resolve, 50)); // Short delay
@@ -91,7 +92,7 @@ export async function loadAllData() {
     dataAvailable.waypoints = true;
     dataAvailable.navaids = true; // Assuming navaids are also available
 
-    await Promise.all([lowResPromise, highResPromise, wmmPromise]);
+    await Promise.all([lowResPromise, highResPromise]);
 
     // Update UI based on loaded data *after* all promises resolved
     updateDataAvailabilityUI();
@@ -119,39 +120,12 @@ function updateDataSourceInfo(sourceName, timestamp) {
  * Function to update UI elements based on data availability
  */
 function updateDataAvailabilityUI() {
-    const overlaySelect = document.getElementById('overlay-type');
-    if (!overlaySelect) {
-        console.warn("Overlay type select element not found.");
-        return;
-    }
-    // Update overlay dropdown options
-    const options = overlaySelect.querySelectorAll('option');
-    options.forEach(option => {
-        const dataType = option.value;
-        if (dataType !== 'none') {
-            const baseText = option.dataset.baseText || option.textContent.replace(' (unavailable)', '').replace(' (loading...)', '');
-            option.dataset.baseText = baseText;
-            if (!dataAvailable.hasOwnProperty(dataType)) {
-                option.textContent = `${baseText} (unavailable)`;
-                option.disabled = true;
-                option.style.color = '#888';
-            } else if (dataAvailable[dataType]) {
-                option.textContent = baseText;
-                option.disabled = false;
-                option.style.color = '';
-            } else {
-                option.textContent = `${baseText} (unavailable)`;
-                option.disabled = true;
-                option.style.color = '#888';
-            }
-        }
-    });
-    if (overlaySelect.selectedOptions.length > 0 && overlaySelect.selectedOptions[0].disabled) {
-        overlaySelect.value = 'none';
-        config.overlayType = 'none';
-        if (window.callbacks && typeof window.callbacks.scheduleRender === 'function') {
-            window.callbacks.scheduleRender(true);
-        }
+    // --- Overlay toggle for magvar ---
+    const magvarToggle = document.getElementById('toggle-magvar-overlay');
+    if (magvarToggle) {
+        magvarToggle.disabled = !dataAvailable.magvar;
+        magvarToggle.parentElement.style.opacity = dataAvailable.magvar ? 1 : 0.5;
+        magvarToggle.parentElement.title = dataAvailable.magvar ? "Toggle Magnetic Variation Overlay" : "Data not available";
     }
 
     // Update layer toggles based on data availability (e.g., disable if no data)
