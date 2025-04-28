@@ -1,7 +1,7 @@
 // js/app.js
 import { config } from './config.js';
 import { loadAllData, dataAvailable } from './data.js'; // Import dataAvailable
-import { initializeRenderer, renderGlobe } from './renderer.js';
+import { initializeRenderer, renderGlobe, renderOverlays } from './renderer.js'; // Import renderOverlays
 import { initializeUI } from './ui.js';
 
 // --- Constants ---
@@ -11,12 +11,15 @@ const AUTOROTATE_INTERVAL = 50;
 const INTRO_START_ROTATION = [-75, 25, 0];
 
 // --- Application State ---
-const appState = {
+export const appState = { // Added export here
     currentScale: config.defaultScale,
     currentRotation: [...config.initialRotation],
-    // No longer store worldData directly here, renderer selects based on scale
+    // No longer store worldData directly here, renderer selects data internally
     isAnimating: false,
     autoRotateTimer: null,
+    isRotating: false, // Added for rotation state
+    isInteracting: false, // Added for interaction state
+    renderTimeout: null, // Added for render timeout
 };
 
 // --- DOM Elements ---
@@ -138,6 +141,10 @@ function scheduleRender(forceRedraw = false) {
         if (dataAvailable.landLowRes) {
             // Pass scale and rotation, renderer selects data internally
             renderGlobe(appState.currentScale, appState.currentRotation);
+            // If not rotating, render overlays
+            if (!appState.isRotating) {
+                renderOverlays();
+            }
         } else {
             console.warn("Attempted to render before land data was available.");
             // Optionally show a message or render a blank state
@@ -151,6 +158,7 @@ function scheduleRender(forceRedraw = false) {
  */
 function startIntroAnimation() {
     updateAnimating(true);
+    startRotation(); // Start rotation flag
 
     d3.transition()
         .duration(ANIMATION_DURATION)
@@ -165,11 +173,13 @@ function startIntroAnimation() {
         })
         .on("end", () => {
             updateAnimating(false);
+            stopRotation(); // Stop rotation flag
             scheduleRender(true); // Final render
             if (config.rotationSpeed > 0) startStopAutoRotate(true);
         })
         .on("interrupt", () => {
             updateAnimating(false);
+            stopRotation(); // Stop rotation flag
             scheduleRender(true); // Render interrupted state
         });
 }
@@ -183,6 +193,7 @@ function startIntroAnimation() {
 function navigateTo(targetLon, targetLat) {
     if (appState.isAnimating) return;
     startStopAutoRotate(false); // Stop rotation during navigation
+    startRotation(); // Start rotation flag
 
     const startRotation = [...appState.currentRotation];
     const normTargetLon = normalizeLongitude(targetLon);
@@ -208,12 +219,14 @@ function navigateTo(targetLon, targetLat) {
         })
         .on("end", () => {
             updateAnimating(false);
+            stopRotation(); // Stop rotation flag
             updateRotation([normTargetLon, targetLat, startRotation[2]]);
             scheduleRender(true); // Final render
             if (config.rotationSpeed > 0) startStopAutoRotate(true);
         })
         .on("interrupt", () => {
             updateAnimating(false);
+            stopRotation(); // Stop rotation flag
             scheduleRender(true); // Render interrupted state
             if (config.rotationSpeed > 0) startStopAutoRotate(true);
         });
@@ -233,8 +246,10 @@ function startStopAutoRotate(start) {
     config.autoRotate = start && config.rotationSpeed > 0;
 
     if (!config.autoRotate) {
+        stopRotation(); // Ensure rotation flag is off
         return;
     }
+    startRotation(); // Ensure rotation flag is on
 
     updateAutoRotateTimer(setInterval(() => {
         if (appState.isAnimating || !config.autoRotate || config.rotationSpeed <= 0) {
@@ -242,6 +257,7 @@ function startStopAutoRotate(start) {
                 clearInterval(appState.autoRotateTimer);
                 updateAutoRotateTimer(null);
             }
+            stopRotation(); // Ensure rotation flag is off
             return;
         }
 
@@ -271,6 +287,22 @@ function handleResize() {
     }
 }
 
+/**
+ * Sets the isRotating flag to true.
+ */
+function startRotation() {
+    appState.isRotating = true;
+    // Optionally: re-render without overlays
+    scheduleRender(true);
+}
+
+/**
+ * Sets the isRotating flag to false.
+ */
+function stopRotation() {
+    appState.isRotating = false;
+    scheduleRender(true);
+}
 
 /**
  * Initializes the application.
@@ -293,7 +325,9 @@ function init() {
         navigateTo,
         updateRotation,
         updateScale, // Pass updateScale for zoom handler
-        startStopAutoRotate
+        startStopAutoRotate,
+        startRotation,
+        stopRotation
     });
 
     // Add resize listener
