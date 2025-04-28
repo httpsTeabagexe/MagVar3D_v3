@@ -120,9 +120,13 @@ function setupPanelControlListeners() {
 
     // --- Search Panel ---
     const searchInput = document.querySelector('#search-panel input[type="text"]');
-    if(searchInput) {
-        searchInput.addEventListener('change', (event) => { /* ... Search logic ... */ });
-        searchInput.addEventListener('keydown', (event) => { if (event.key === 'Enter') { /* ... Search logic ... */ } });
+    if (searchInput) {
+        searchInput.addEventListener('change', (event) => { /* ... Search logic ... */
+        });
+        searchInput.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') { /* ... Search logic ... */
+            }
+        });
     } else console.warn("Search input not found in #search-panel");
 
     // --- Display Panel ---
@@ -180,11 +184,14 @@ function setupPanelControlListeners() {
         heightLevelSlider.addEventListener('input', () => {
             config.altitudeKm = parseFloat(heightLevelSlider.value);
             heightValueSpan.textContent = `${config.altitudeKm} km`;
-            if(callbacks.scheduleRender) { clearTimeout(appState.renderTimeout); appState.renderTimeout = setTimeout(() => callbacks.scheduleRender(true), 50); }
+            if (callbacks.scheduleRender) {
+                clearTimeout(appState.renderTimeout);
+                appState.renderTimeout = setTimeout(() => callbacks.scheduleRender(true), 50);
+            }
         });
     } else {
-        if(!heightLevelSlider) console.warn("Slider 'height-level' not found.");
-        if(!heightValueSpan) console.warn("Span 'height-value' not found.");
+        if (!heightLevelSlider) console.warn("Slider 'height-level' not found.");
+        if (!heightValueSpan) console.warn("Span 'height-value' not found.");
     }
 
     if (!config.hasOwnProperty('decimalYear') || config.decimalYear === null) {
@@ -202,33 +209,39 @@ function setupPanelControlListeners() {
         dateInput.addEventListener('input', () => {
             config.decimalYear = parseFloat(dateInput.value);
             dateValueSpan.textContent = config.decimalYear.toFixed(1);
-            if(callbacks.scheduleRender) { clearTimeout(appState.renderTimeout); appState.renderTimeout = setTimeout(() => callbacks.scheduleRender(true), 50); }
+            if (callbacks.scheduleRender) {
+                clearTimeout(appState.renderTimeout);
+                appState.renderTimeout = setTimeout(() => callbacks.scheduleRender(true), 50);
+            }
         });
     } else {
-        if(!dateInput) console.warn("Input '#date-year' not found.");
-        if(!dateValueSpan) console.warn("Span '#date-value' not found.");
+        if (!dateInput) console.warn("Input '#date-year' not found.");
+        if (!dateValueSpan) console.warn("Span '#date-value' not found.");
     }
 
     const overlayOpacitySlider = document.getElementById('overlay-opacity');
-    if(overlayOpacitySlider) {
+    if (overlayOpacitySlider) {
         overlayOpacitySlider.value = config.overlayOpacity * 100;
         overlayOpacitySlider.addEventListener('input', () => {
             config.overlayOpacity = parseFloat(overlayOpacitySlider.value) / 100;
-            if(overlayGroup) overlayGroup.style('opacity', config.overlayOpacity);
+            if (overlayGroup) overlayGroup.style('opacity', config.overlayOpacity);
         });
     } else console.warn("Slider 'overlay-opacity' not found.");
 
     const vectorDensitySlider = document.getElementById('vector-density');
-    if(vectorDensitySlider) {
+    if (vectorDensitySlider) {
         vectorDensitySlider.value = config.vectorDensity;
         vectorDensitySlider.addEventListener('input', () => {
             config.vectorDensity = parseFloat(vectorDensitySlider.value);
-            if(callbacks.scheduleRender) { clearTimeout(appState.renderTimeout); appState.renderTimeout = setTimeout(() => callbacks.scheduleRender(true), 50); }
+            if (callbacks.scheduleRender) {
+                clearTimeout(appState.renderTimeout);
+                appState.renderTimeout = setTimeout(() => callbacks.scheduleRender(true), 50);
+            }
         });
     } else console.warn("Slider 'vector-density' not found.");
 
     const isolineSpacingSelect = document.getElementById('isoline-spacing');
-    if(isolineSpacingSelect) {
+    if (isolineSpacingSelect) {
         isolineSpacingSelect.value = config.isolineSpacing;
         isolineSpacingSelect.addEventListener('change', () => {
             config.isolineSpacing = isolineSpacingSelect.value;
@@ -257,7 +270,9 @@ function setupPanelControlListeners() {
             config.rotationSpeed = speed;
             if (callbacks.startStopAutoRotate) callbacks.startStopAutoRotate(speed > 0);
         });
-        if (config.rotationSpeed > 0 && callbacks.startStopAutoRotate) { callbacks.startStopAutoRotate(true); }
+        if (config.rotationSpeed > 0 && callbacks.startStopAutoRotate) {
+            callbacks.startStopAutoRotate(true);
+        }
     } else console.warn("Slider 'rotation-speed' not found.");
 
     const viewButtons = document.querySelectorAll('#views-panel .btn-group button');
@@ -265,24 +280,38 @@ function setupPanelControlListeners() {
         viewButtons.forEach(button => {
             button.addEventListener('click', () => {
                 const view = button.id.replace('view-', '');
-                const viewTargets = { 'atlantic': [-30, 30], 'pacific': [-170, 0], 'north-america': [-100, 40], 'south-america': [-60, -20], 'europe': [15, 50], 'africa': [20, 0], 'asia': [90, 40], 'australia': [135, -25] };
-                if (viewTargets[view] && callbacks.navigateTo) { callbacks.navigateTo(...viewTargets[view]); }
+                const viewTargets = {
+                    'atlantic': [-30, 30],
+                    'pacific': [-170, 0],
+                    'north-america': [-100, 40],
+                    'south-america': [-60, -20],
+                    'europe': [15, 50],
+                    'africa': [20, 0],
+                    'asia': [90, 40],
+                    'australia': [135, -25]
+                };
+                if (viewTargets[view] && callbacks.navigateTo) {
+                    callbacks.navigateTo(...viewTargets[view]);
+                }
             });
         });
     } else console.warn("View buttons not found in #views-panel.");
 
     // --- Settings Panel ---
     const gridOpacitySlider = document.getElementById('grid-opacity');
-    if(gridOpacitySlider) {
+    if (gridOpacitySlider) {
         gridOpacitySlider.value = config.graticuleOpacity * 100;
         gridOpacitySlider.addEventListener('input', () => {
             config.graticuleOpacity = parseFloat(gridOpacitySlider.value) / 100;
-            if(callbacks.scheduleRender) { clearTimeout(appState.renderTimeout); appState.renderTimeout = setTimeout(() => callbacks.scheduleRender(true), 50); }
+            if (callbacks.scheduleRender) {
+                clearTimeout(appState.renderTimeout);
+                appState.renderTimeout = setTimeout(() => callbacks.scheduleRender(true), 50);
+            }
         });
     } else console.warn("Slider 'grid-opacity' not found.");
 
     const gridColorSelect = document.getElementById('grid-color');
-    if(gridColorSelect) {
+    if (gridColorSelect) {
         gridColorSelect.value = config.graticuleColor;
         gridColorSelect.addEventListener('change', () => {
             config.graticuleColor = gridColorSelect.value;
@@ -297,11 +326,11 @@ function setupPanelControlListeners() {
 function updateOverlayControlsVisibility() {
     const showOverlayControls = config.overlayType !== 'none';
     const overlayOptionsSection = document.querySelector('#overlays-panel .menu-section:nth-child(2)');
-    if(overlayOptionsSection) {
+    if (overlayOptionsSection) {
         overlayOptionsSection.style.display = showOverlayControls ? '' : 'none';
     }
 
-    if(showOverlayControls) {
+    if (showOverlayControls) {
         const vectorDensityControl = document.getElementById('vector-density')?.closest('.overlay-option-item');
         const isolineSpacingControl = document.getElementById('isoline-spacing')?.closest('.overlay-option-item');
 
@@ -313,9 +342,8 @@ function updateOverlayControlsVisibility() {
         }
     }
     const legend = document.getElementById('overlay-legend');
-    if(legend) legend.classList.toggle('visible', showOverlayControls);
+    if (legend) legend.classList.toggle('visible', showOverlayControls);
 }
-
 
 
 function setupTopBarListeners() {
@@ -336,7 +364,13 @@ function setupTopBarListeners() {
     // Ensure only one is active initially
     let activeFound = false;
     topBarButtons.forEach(button => {
-        if (button.classList.contains('active')) { if (!activeFound) { activeFound = true; } else { button.classList.remove('active'); } }
+        if (button.classList.contains('active')) {
+            if (!activeFound) {
+                activeFound = true;
+            } else {
+                button.classList.remove('active');
+            }
+        }
     });
     console.log("Top bar listeners setup complete.");
 }
@@ -346,12 +380,19 @@ function setupTopBarListeners() {
 function handleMouseDown(event) {
     if (event.button !== 0) return; // Only left click
     event.preventDefault();
+
+    // Set isInteracting to true
+    appState.isInteracting = true;
+
     isDragging = true;
-    dragStartCoords = { x: event.clientX, y: event.clientY };
+    dragStartCoords = {x: event.clientX, y: event.clientY};
     dragStartRotation = [...appState.currentRotation];
     svg.style('cursor', 'grabbing');
     if (callbacks.startStopAutoRotate) callbacks.startStopAutoRotate(false);
+    if (callbacks.startRotation) callbacks.startRotation();
     hideTooltip();
+
+    // No need to force render here, it will be handled in the renderer
 }
 
 function handleDragMove(event) {
@@ -381,7 +422,10 @@ function handleMouseUp(event) {
         if (config.autoRotate && config.rotationSpeed > 0 && callbacks.startStopAutoRotate) {
             callbacks.startStopAutoRotate(true);
         }
-        // Schedule a final high-quality render after drag ends
+        if (callbacks.stopRotation) callbacks.stopRotation();
+
+        // Set isInteracting to false and force a re-render
+        appState.isInteracting = false;
         if (callbacks.scheduleRender) callbacks.scheduleRender(true);
     }
 }
@@ -394,6 +438,10 @@ function handleMouseLeave() {
             // Optionally restart auto-rotate here if needed
             // callbacks.startStopAutoRotate(true);
         }
+        if (callbacks.stopRotation) callbacks.stopRotation();
+
+        // Set isInteracting to false and force a re-render
+        appState.isInteracting = false;
         if (callbacks.scheduleRender) callbacks.scheduleRender(true);
     }
     hideTooltip();
@@ -402,12 +450,19 @@ function handleMouseLeave() {
 function handleTouchStart(event) {
     if (event.touches.length === 1) {
         event.preventDefault();
+
+        // Set isInteracting to true
+        appState.isInteracting = true;
+
         isDragging = true;
         const touch = event.touches[0];
-        dragStartCoords = { x: touch.clientX, y: touch.clientY };
+        dragStartCoords = {x: touch.clientX, y: touch.clientY};
         dragStartRotation = [...appState.currentRotation];
         if (callbacks.startStopAutoRotate) callbacks.startStopAutoRotate(false);
+        if (callbacks.startRotation) callbacks.startRotation();
         hideTooltip();
+
+        // No need to force render here, it will be handled in the renderer
     }
 }
 
@@ -436,6 +491,10 @@ function handleTouchEnd(event) {
         if (config.autoRotate && config.rotationSpeed > 0 && callbacks.startStopAutoRotate) {
             callbacks.startStopAutoRotate(true);
         }
+        if (callbacks.stopRotation) callbacks.stopRotation();
+
+        // Set isInteracting to false and force a re-render
+        appState.isInteracting = false;
         if (callbacks.scheduleRender) callbacks.scheduleRender(true);
     }
 }

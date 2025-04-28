@@ -4,6 +4,7 @@ import { applyProjection, featureToPathData } from './wgs84.js';
 import { dataAvailable, landDataLowRes, landDataHighRes } from './data.js'; // Import GeoJSON data
 import { getOverlayValue, formatOverlayValue, getOverlayColor, getVectorAngle, updateOverlayLegend, showDataUnavailableMessage, extractLabelPoints } from './overlayUtils.js';
 import { getCurrentDecimalYear } from './wmm.js'; // Needed for date fallback
+import { appState } from './app.js'; // Add import for appState
 
 let svg, globeGroup, earthBoundary, overlayGroup;
 
@@ -45,6 +46,14 @@ export function initializeRenderer(_svg, _globeGroup, _earthBoundary, _overlayGr
 }
 
 /**
+ * Draw the overlays
+ */
+export function renderOverlays() {
+    // console.log("[renderOverlays] Called."); // DEBUG
+    drawOverlay(appState.currentScale, appState.currentRotation);
+}
+
+/**
  * Draw the main globe elements (land, water, graticule, etc.)
  */
 export function renderGlobe(scale, rotation) { // Removed worldTopology argument
@@ -73,16 +82,8 @@ export function renderGlobe(scale, rotation) { // Removed worldTopology argument
     }
 
     // --- Select Land Data based on LOD ---
-    let landFeatures = null;
-    if (scale >= config.lodScaleThreshold && dataAvailable.landHighRes) {
-        landFeatures = landDataHighRes;
-        // console.log("[renderGlobe] Using high-res land data"); // DEBUG
-    } else if (dataAvailable.landLowRes) {
-        landFeatures = landDataLowRes;
-        // console.log("[renderGlobe] Using low-res land data"); // DEBUG
-    } else {
-        console.warn("[renderGlobe] No land data available to render.");
-    }
+    let useHighRes = scale >= config.lodScaleThreshold && dataAvailable.landHighRes && !appState.isInteracting; // Added appState.isInteracting check
+    let landFeatures = useHighRes ? landDataHighRes : landDataLowRes;
 
     // --- Draw Land using selected GeoJSON ---
     globeGroup.selectAll('.land').remove();
@@ -99,6 +100,7 @@ export function renderGlobe(scale, rotation) { // Removed worldTopology argument
     } else {
         console.warn("No land features available to draw.");
     }
+
 
     // --- Draw Airspaces (checks config) ---
     drawAirspaces(scale, rotation);
@@ -186,13 +188,13 @@ function drawGraticule(scale, rotation) {
     globeGroup.selectAll('.graticule').remove();
     if (!config.showGraticule) return;
 
-    const graticule = d3.geoGraticule().stepMinor([10, 10]).stepMajor([90,30]);
+    const graticule = d3.geoGraticule().stepMinor([10, 10]).stepMajor([90, 30]);
     const graticuleData = graticule();
     // Convert d3 graticule output (MultiLineString) to a GeoJSON Feature for path generation
     const graticuleFeature = { type: "Feature", geometry: graticuleData };
     const pathData = featureToPathData(graticuleFeature, scale, rotation);
 
-    if(pathData){
+    if (pathData) {
         globeGroup.append('path')
             // .datum(graticuleData) // Not strictly needed when pathData is pre-generated
             .attr('class', 'graticule')
@@ -208,10 +210,14 @@ function drawGraticule(scale, rotation) {
  * Draw the appropriate overlay based on config
  */
 function drawOverlay(scale, rotation) {
+    if (appState.isInteracting) { // Added check for appState.isInteracting
+        overlayGroup.selectAll('*').remove();
+        return;
+    }
     // console.log(`[drawOverlay] Called. Type: ${config.overlayType}, Mode: ${config.displayMode}`); // DEBUG
     overlayGroup.selectAll('*').remove();
     const legend = document.getElementById('overlay-legend');
-    if(legend) legend.classList.remove('visible');
+    if (legend) legend.classList.remove('visible');
 
     if (config.overlayType === 'none') return;
 
@@ -255,8 +261,8 @@ function drawGradientOverlay(scale, rotation) {
     const currentYear = config.decimalYear || getCurrentDecimalYear();
     let count = 0;
 
-    for (let lat = -90 + gridSpacing/2; lat < 90; lat += gridSpacing) {
-        for (let lon = -180 + gridSpacing/2; lon < 180; lon += gridSpacing) {
+    for (let lat = -90 + gridSpacing / 2; lat < 90; lat += gridSpacing) {
+        for (let lon = -180 + gridSpacing / 2; lon < 180; lon += gridSpacing) {
             const projected = applyProjection(lon, lat, scale, rotation);
             // Only draw if on the visible hemisphere/map
             if (projected && (config.projection !== 'orthographic' || projected[2] > 0)) {
@@ -305,6 +311,7 @@ function drawVectorOverlay(scale, rotation) {
                 }
 
                 const angle = getVectorAngle(lon, lat, config.altitudeKm, currentYear, config.overlayType);
+
                 if (angle === null) {
                     calcErrors++;
                     continue;
@@ -314,7 +321,7 @@ function drawVectorOverlay(scale, rotation) {
 
                 // Adjust vector length scale
                 let lengthScaleFactor = 0.5;
-                if(config.overlayType === 'magvar') lengthScaleFactor = 0.3;
+                if (config.overlayType === 'magvar') lengthScaleFactor = 0.3;
                 // Base length on scale, cap min/max
                 const length = Math.min(scale * 0.15, Math.max(scale * 0.01, Math.abs(value) * lengthScaleFactor + scale * 0.02));
 
@@ -332,6 +339,7 @@ function drawVectorOverlay(scale, rotation) {
                 // Draw arrowhead
                 const arrowSize = Math.max(1.5, length * 0.2);
                 const arrowAngle = Math.PI / 6;
+
 
                 const arrowX1 = endX - arrowSize * Math.sin(radians - arrowAngle);
                 const arrowY1 = endY + arrowSize * Math.cos(radians - arrowAngle);
@@ -363,8 +371,8 @@ function drawIsolineOverlay(scale, rotation) {
     let minValue = Infinity, maxValue = -Infinity;
     const sampleGridSpacing = Math.max(2, gridSpacing); // Use a coarser grid for range sampling
     // Sample grid to find data range
-    for (let lat = -90 + sampleGridSpacing/2; lat < 90; lat += sampleGridSpacing) {
-        for (let lon = -180 + sampleGridSpacing/2; lon < 180; lon += sampleGridSpacing) {
+    for (let lat = -90 + sampleGridSpacing / 2; lat < 90; lat += sampleGridSpacing) {
+        for (let lon = -180 + sampleGridSpacing / 2; lon < 180; lon += sampleGridSpacing) {
             const value = getOverlayValue(lon, lat, config.altitudeKm, currentYear, config.overlayType);
             if (value !== null && isFinite(value)) { // Check for valid finite numbers
                 minValue = Math.min(minValue, value);
@@ -376,7 +384,7 @@ function drawIsolineOverlay(scale, rotation) {
     }
     // console.log(`[drawIsolineOverlay] Value range: ${minValue} to ${maxValue}. Sample errors: ${calcErrors}`); // DEBUG
 
-    if (!isFinite(minValue) || !isFinite(maxValue) || minValue === maxValue ) {
+    if (!isFinite(minValue) || !isFinite(maxValue) || minValue === maxValue) {
         console.warn(`[drawIsolineOverlay] Could not determine valid data range or range is zero for ${config.overlayType} isolines (Range: ${minValue}-${maxValue}).`);
         return; // Cannot generate thresholds
     }
@@ -488,4 +496,3 @@ function convertContourToPathData(contour, scale, rotation, gridSpacing) {
     }
     return pathSegments.join(' ');
 }
-
