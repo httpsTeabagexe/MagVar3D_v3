@@ -9,13 +9,15 @@ let isDragging = false;
 let dragStartCoords = { x: 0, y: 0 };
 let dragStartRotation = [0, 0, 0];
 let tooltipTimeout = null; // To delay tooltip appearance
+let overlayGroup; // Add overlayGroup variable
 
 let marker, infoWindow, tooltip;
 
-export function initializeUI(_svg, _appState, _callbacks) {
+export function initializeUI(_svg, _appState, _callbacks, _overlayGroup) { // Add _overlayGroup parameter
     svg = _svg;
     appState = _appState;
     callbacks = _callbacks;
+    overlayGroup = _overlayGroup; // Store overlayGroup
 
     // Initialize UI elements (Tooltip, Marker - unrelated to sidebar)
     marker = document.getElementById('marker');
@@ -507,9 +509,7 @@ function handleWheel(event) {
     const newScale = Math.max(config.minScale, Math.min(config.maxScale, appState.currentScale * scaleFactor));
 
     if (Math.abs(newScale - appState.currentScale) > 0.01) {
-        // Call updateScale callback to update appState
         if (callbacks.updateScale) callbacks.updateScale(newScale);
-        // Schedule a render (force=true to ensure LOD check happens)
         if (callbacks.scheduleRender) callbacks.scheduleRender(true);
     }
 }

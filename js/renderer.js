@@ -7,6 +7,8 @@ import { getCurrentDecimalYear } from './wmm.js'; // Needed for date fallback
 import { appState } from './app.js'; // Add import for appState
 
 let svg, globeGroup, earthBoundary, overlayGroup;
+let lodTimeout = null;
+let useHighRes = false; // Track current LOD
 
 // --- Placeholder Data (Keep or fetch dynamically) ---
 const airportData = [
@@ -56,11 +58,26 @@ export function renderOverlays() {
 /**
  * Draw the main globe elements (land, water, graticule, etc.)
  */
-export function renderGlobe(scale, rotation) { // Removed worldTopology argument
-    if (!svg || !globeGroup || !earthBoundary || !overlayGroup) {
-        console.error("Renderer not initialized.");
-        return;
+export function renderGlobe(scale, rotation) {
+    if (!svg || !globeGroup || !earthBoundary || !overlayGroup) return;
+    const wantHighRes = scale >= config.lodScaleThreshold && dataAvailable.landHighRes && !appState.isInteracting;
+    if (wantHighRes && !useHighRes) {
+        // Delay switching to high-res
+        if (lodTimeout) clearTimeout(lodTimeout);
+        lodTimeout = setTimeout(() => {
+            useHighRes = true;
+            scheduleRender(true); // Force re-render with high-res
+        }, config.lodDelayMs);
+    } else if (!wantHighRes && useHighRes) {
+        // Switch back to low-res immediately
+        if (lodTimeout) clearTimeout(lodTimeout);
+        useHighRes = false;
+    } else if (!wantHighRes && lodTimeout) {
+        // Cancel pending high-res switch if zoomed out or interacting
+        clearTimeout(lodTimeout);
+        lodTimeout = null;
     }
+    const landFeatures = useHighRes ? landDataHighRes : landDataLowRes;
 
     // Update Earth boundary/background
     if (config.projection === 'orthographic') {
@@ -82,9 +99,7 @@ export function renderGlobe(scale, rotation) { // Removed worldTopology argument
     }
 
     // --- Select Land Data based on LOD ---
-    let useHighRes = scale >= config.lodScaleThreshold && dataAvailable.landHighRes && !appState.isInteracting; // Added appState.isInteracting check
-    let landFeatures = useHighRes ? landDataHighRes : landDataLowRes;
-
+    // let useHighRes = scale >= config.lodScaleThreshold && dataAvailable.landHighRes && !appState.isInteracting; // Added appState.isInteracting check
     // --- Draw Land using selected GeoJSON ---
     globeGroup.selectAll('.land').remove();
     if (landFeatures && landFeatures.features) {
@@ -222,7 +237,7 @@ function drawOverlay(scale, rotation) {
     if (config.overlayType === 'none') return;
 
     // Check data availability for the selected overlay type
-    if (!dataAvailable[config.overlayType]) {
+    if (!dataAvailable[config.overlayType] && config.overlayType !== 'magvar') {
         console.warn(`[drawOverlay] Data for overlay type '${config.overlayType}' is not available.`);
         showDataUnavailableMessage(overlayGroup, `Data for ${config.overlayType} overlay is not available.`);
         return;
@@ -311,12 +326,10 @@ function drawVectorOverlay(scale, rotation) {
                 }
 
                 const angle = getVectorAngle(lon, lat, config.altitudeKm, currentYear, config.overlayType);
-
                 if (angle === null) {
                     calcErrors++;
                     continue;
                 }
-
                 const color = getOverlayColor(value, config.overlayType);
 
                 // Adjust vector length scale
@@ -328,6 +341,9 @@ function drawVectorOverlay(scale, rotation) {
                 const radians = angle * Math.PI / 180;
                 const endX = x + Math.sin(radians) * length;
                 const endY = y - Math.cos(radians) * length;
+                if (isNaN(endX) || isNaN(endY)) {
+                    continue;
+                }
 
                 overlayGroup.append('line')
                     .attr('x1', x).attr('y1', y)
@@ -345,6 +361,9 @@ function drawVectorOverlay(scale, rotation) {
                 const arrowY1 = endY + arrowSize * Math.cos(radians - arrowAngle);
                 const arrowX2 = endX - arrowSize * Math.sin(radians + arrowAngle);
                 const arrowY2 = endY + arrowSize * Math.cos(radians + arrowAngle);
+                if (isNaN(arrowX1) || isNaN(arrowY1) || isNaN(arrowX2) || isNaN(arrowY2)) {
+                    continue;
+                }
 
                 overlayGroup.append('path')
                     .attr('d', `M${endX},${endY} L${arrowX1},${arrowY1} L${arrowX2},${arrowY2} Z`)
@@ -476,7 +495,9 @@ function convertContourToPathData(contour, scale, rotation, gridSpacing) {
                         segment = []; // Reset segment for new line part
                     }
                     // Add projected point to current segment
-                    segment.push(`${projected[0].toFixed(2)},${projected[1].toFixed(2)}`);
+                    if (!isNaN(projected[0]) && !isNaN(projected[1])) {
+                        segment.push(`${projected[0].toFixed(2)},${projected[1].toFixed(2)}`);
+                    }
                 }
 
                 // Update last visibility status

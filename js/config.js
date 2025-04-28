@@ -39,8 +39,8 @@ export const config = {
     height: window.innerHeight,
     sensitivity: 75,
     defaultScale: 280,
-    maxScale: 1200,
-    minScale: 150,
+    maxScale: 2900,
+    minScale: 90,
     initialRotation: [0, 10, 0], // Start slightly tilted
     projection: 'orthographic', // Default projection
     autoRotate: false,
@@ -49,7 +49,8 @@ export const config = {
     // Data Sources
     landDataUrlLowRes: 'MagVar3D_v3/ne_110m_land.geojson', // Low-res land data
     landDataUrlHighRes: 'MagVar3D_v3/ne_50m_land.geojson', // High-res land data
-    lodScaleThreshold: 400, // Scale at which to switch to high-res land data
+    lodScaleThreshold: 600, // Scale at which to switch to high-res land data
+    lodDelayMs: 400, // delay in ms before switching to high-res
     wmmCofUrl: './wmm_cof/WMM.COF', // Keep WMM data source
     dataSourceTimestamp: '2025-03-21 17:50:26 UTC', // Consider updating or removing if not used
 
@@ -91,6 +92,4 @@ export const config = {
 
     // Zoom Level Definitions
     zoomLevelThresholds: zoomLevelThresholds,
-
-    // --- Add other settings as needed ---
 };
