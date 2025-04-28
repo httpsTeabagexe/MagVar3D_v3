@@ -403,16 +403,17 @@ function handleDragMove(event) {
 
     const dx = event.clientX - dragStartCoords.x;
     const dy = event.clientY - dragStartCoords.y;
-    const sensitivityFactor = 1 / (appState.currentScale * 0.015); // Simplified sensitivity
-    const effectiveSensitivity = Math.max(0.05, Math.min(1, config.sensitivity * sensitivityFactor)); // Adjusted clamps
+
+    // Calculate degrees per pixel based on current scale (radius)
+    const radius = appState.currentScale;
+    const degPerPixel = 360 / (2 * Math.PI * radius);
 
     const rotation = [...dragStartRotation];
-    rotation[0] = dragStartRotation[0] + dx * effectiveSensitivity; // Simplified calculation
-    rotation[1] = dragStartRotation[1] - dy * effectiveSensitivity; // Simplified calculation
+    rotation[0] = dragStartRotation[0] + dx * degPerPixel; // Longitude
+    rotation[1] = dragStartRotation[1] + dy * degPerPixel; // Latitude
     rotation[1] = Math.max(-90, Math.min(90, rotation[1])); // Clamp latitude
 
     if (callbacks.updateRotation) callbacks.updateRotation(rotation);
-    // Schedule a render, but don't force high-res during drag
     if (callbacks.scheduleRender) callbacks.scheduleRender(false);
 }
 
