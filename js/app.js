@@ -3,6 +3,7 @@ import { config } from './config.js';
 import { loadAllData, dataAvailable } from './data.js'; // Import dataAvailable
 import { initializeRenderer, renderGlobe, renderOverlays } from './renderer.js'; // Import renderOverlays
 import { initializeUI } from './ui.js';
+import { initGlobe } from './globe.js'; // Import initGlobe
 
 // --- Constants ---
 const ANIMATION_DURATION = 1500;
@@ -84,7 +85,10 @@ function normalizeLongitude(lon) {
  * Creates the SVG container and core groups for the globe.
  */
 function setupSvg() {
-    svg = d3.select('#globe')
+    // Remove existing SVG if it exists
+    d3.select('#globe-container').select('svg').remove();
+
+    svg = d3.select('#globe-container')
         .append('svg')
         .attr('width', '100%') // Use 100% to fit container
         .attr('height', '100%')
@@ -326,21 +330,21 @@ function init() {
     config.width = window.innerWidth - getSidebarWidth();
     config.height = window.innerHeight;
 
-    setupSvg(); // Setup SVG first
+    //setupSvg(); // Setup SVG first
     showLoadingMessage('Loading Earth Data...'); // Show loading message
 
-    initializeRenderer(svg, globeGroup, earthBoundary, overlayGroup);
+    //initializeRenderer(svg, globeGroup, earthBoundary, overlayGroup);
 
     // Pass the correct callbacks, including those needed by zoom/drag
-    initializeUI(svg, appState, {
-        scheduleRender,
-        navigateTo,
-        updateRotation,
-        updateScale, // Pass updateScale for zoom handler
-        startStopAutoRotate,
-        startRotation,
-        stopRotation
-    }, overlayGroup); // Pass overlayGroup here
+    // initializeUI(svg, appState, {
+    //     scheduleRender,
+    //     navigateTo,
+    //     updateRotation,
+    //     updateScale, // Pass updateScale for zoom handler
+    //     startStopAutoRotate,
+    //     startRotation,
+    //     stopRotation
+    // }, overlayGroup); // Pass overlayGroup here
 
     // Add resize listener
     window.addEventListener('resize', handleResize);
@@ -351,8 +355,27 @@ function init() {
             // loadAllData now returns a boolean indicating if low-res land is loaded
             if (initialDataAvailable) {
                 hideLoadingMessage();
-                scheduleRender(true); // Initial render uses low-res data
-                startIntroAnimation(); // Start animation
+                //scheduleRender(true); // Initial render uses low-res data
+                //startIntroAnimation(); // Start animation
+                const container = document.getElementById('globe-container');
+                const globe = initGlobe(container);
+                // Example: auto-rotation
+                let rotation = 0;
+                let rotationSpeed = 0;
+
+                document.getElementById('rotation-speed').addEventListener('input', (e) => {
+                    rotationSpeed = e.target.value / 10;
+                });
+
+                function animate() {
+                    if (rotationSpeed > 0) {
+                        rotation += rotationSpeed;
+                        globe.rotate(rotation, 0);
+                    }
+                    requestAnimationFrame(animate);
+                }
+
+                animate();
             } else {
                 throw new Error("Essential low-resolution land data failed to load.");
             }

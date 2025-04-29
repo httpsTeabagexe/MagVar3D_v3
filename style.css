@@ -540,7 +540,25 @@ input:checked + .slider:before { transform: translateX(14px); }
 /* #top-control-bar, .top-bar-toggle, .top-bar-button related rules removed */
 
 
-/* Main Globe Area */
+/* Main Globe Area - Centered */
+#globe-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100vw;
+    height: 100vh;
+    position: fixed;
+    top: 0;
+    left: 0;
+    background: #181818;
+    z-index: 0;
+}
+
+#globe-svg {
+    display: block;
+    margin: auto;
+}
+
 #globe {
     position: absolute;
     left: 0; top: 0; right: 0; bottom: 0;
