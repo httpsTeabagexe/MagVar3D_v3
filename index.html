@@ -2,300 +2,213 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>WGS84 Globe - Navigraph Style v3</title>
-  <link rel="stylesheet" href="style.css">
-  <link rel="shortcut icon" href="#">
-  <!-- Add Font Awesome or similar icon library if desired -->
-  <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"> -->
+  <title>MagVar3D Globe</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      font-family: "PT Sans", Arial, sans-serif;
+      background: #1b242a;
+      color: #eee;
+      overflow: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+    #globe-container {
+      width: 100vw;
+      height: 100vh;
+      min-height: 100vh;
+      min-width: 100vw;
+      background: radial-gradient(ellipse at 50% 110%, #19202a 60%, #090d14 100%);
+      position: absolute;
+      left: 0; top: 0; right: 0; bottom: 0;
+      overflow: hidden;
+      z-index: 1;
+    }
+    #control-bar {
+      position: absolute;
+      left: 2.5em;
+      top: 2.5em;
+      background: rgba(32,36,44,0.98);
+      border-radius: 12px;
+      box-shadow: 0 4px 32px #000a, 0 1px 3px #0006;
+      z-index: 10;
+      padding: 1.5em 2.4em 1.3em 2.4em;
+      min-width: 260px;
+      user-select: none;
+    }
+    #control-bar h1 {
+      font-size: 1.38em;
+      font-weight: 600;
+      margin: 0 0 0.5em 0;
+      letter-spacing: 0.02em;
+    }
+    .button-bar {
+      display: flex;
+      gap: 0.6em;
+      margin-bottom: 0.95em;
+    }
+    .btn {
+      border: none;
+      background: linear-gradient(180deg,#2d3544 0%,#212733 100%);
+      color: #ffe48a;
+      font-size: 1.25em;
+      border-radius: 50%;
+      width: 2.3em;
+      height: 2.3em;
+      box-shadow: 0 2px 8px #0004;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .btn:active {
+      background: #ffe48a;
+      color: #1c1c1c;
+      box-shadow: 0 1px 2px #0008;
+    }
+    .slider-bar {
+      display: flex;
+      align-items: center;
+      gap: 0.7em;
+    }
+    #zoom-slider {
+      width: 110px;
+      accent-color: #ffe48a;
+      vertical-align: middle;
+    }
+    label {
+      color: #b0b8c8;
+      font-size: 1.07em;
+    }
+    #layer-select {
+      margin-top: 1.1em;
+      background: #232b3c;
+      color: #ffe48a;
+      border-radius: 5px;
+      border: 1px solid #3d4760;
+      font-size: 1em;
+      padding: 0.23em 0.7em;
+      margin-right: 0.5em;
+    }
+    #legend-box {
+      margin-top: 1.0em;
+      background: #232b3c;
+      border-radius: 7px;
+      padding: 0.7em 0.8em;
+      color: #ffe48a;
+      font-size: 0.97em;
+      box-shadow: 0 1px 3px #0003;
+      display: inline-block;
+    }
+    #status-bar {
+      position: absolute;
+      left: 0;
+      bottom: 0;
+      width: 100vw;
+      min-height: 2.2em;
+      background: rgba(32,32,40,0.92);
+      color: #ffe48a;
+      font-size: 1.03em;
+      padding: 0.4em 1.7em;
+      box-shadow: 0 -2px 18px #0006;
+      z-index: 20;
+      pointer-events: none;
+      user-select: text;
+    }
+    #overlay-info-box {
+      pointer-events: none;
+      transition: opacity 0.18s;
+    }
+    @media (max-width: 700px) {
+      #control-bar {
+        left: 0.7em;
+        right: 0.7em;
+        min-width: unset;
+        max-width: unset;
+        width: calc(100vw - 1.4em);
+        padding: 1em 0.7em 1em 0.7em;
+      }
+      #legend-box {
+        font-size: 1em;
+      }
+      #status-bar {
+        font-size: 1em;
+        padding: 0.4em 0.7em;
+      }
+    }
+  </style>
+  <link href="https://fonts.googleapis.com/css?family=PT+Sans:400,700&display=swap" rel="stylesheet">
 </head>
 <body>
-
-<!-- Left Sidebar (Icon Bar) -->
-<div id="left-sidebar">
-  <div class="sidebar-item active" data-panel="search-panel">
-    <span class="icon">🔍</span> <span class="label">Search</span>
-  </div>
-  <div class="sidebar-item" data-panel="display-panel">
-    <span class="icon">🗺️</span> <span class="label">Map</span>
-  </div>
-  <div class="sidebar-item" data-panel="overlays-panel">
-    <span class="icon">📊</span> <span class="label">Overlays</span>
-  </div>
-  <div class="sidebar-item" data-panel="views-panel">
-    <span class="icon">🌍</span> <span class="label">Views</span>
-  </div>
-  <div class="sidebar-item" data-panel="settings-panel">
-    <span class="icon">🔧</span> <span class="label">Settings</span>
-  </div>
-  <div class="sidebar-item" data-panel="about-panel">
-    <span class="icon">ℹ️</span> <span class="label">About</span>
-  </div>
-</div>
-
-<!-- Top Control Bar REMOVED -->
-
-
-<!-- Content Panels (Appear next to sidebar) -->
-<div id="sidebar-content">
-  <!-- Search Panel -->
-  <div id="search-panel" class="sidebar-content-panel visible">
-    <div class="panel-header">
-      <h3>Search</h3>
-      <button class="hide-panel-button" title="Hide Panel">✕</button>
-    </div>
-    <div class="panel-inner-content">
-      <input type="text" placeholder="Search locations...">
-      <p>Let's start exploring</p>
-      <p style="color: var(--navigraph-text-secondary); font-size: 11px;">Use the Search textfield to get results for your journey.</p>
-    </div>
-  </div>
-
-  <!-- Display Panel -->
-  <div id="display-panel" class="sidebar-content-panel">
-    <div class="panel-header">
-      <h3>Map Display</h3>
-      <button class="hide-panel-button" title="Hide Panel">✕</button>
-    </div>
-    <div class="panel-inner-content">
-
-      <!-- Map Layers Subcategory -->
-      <div class="menu-section">
-        <h4>Map Layers</h4>
-        <div class="layer-list">
-          <div class="layer-item interactive">
-            <span>Airports</span>
-            <label class="switch" title="Toggle Airports">
-              <input type="checkbox" id="toggle-layer-airports" checked>
-              <span class="slider round"></span>
-            </label>
-          </div>
-          <div class="layer-item interactive">
-            <span>Airspace</span>
-            <label class="switch" title="Toggle Airspace">
-              <input type="checkbox" id="toggle-layer-airspace" checked>
-              <span class="slider round"></span>
-            </label>
-          </div>
-          <!-- Removed Navaids, Waypoints, Airways -->
-        </div>
-      </div>
-
-      <!-- Other Display Options -->
-      <div class="menu-section">
-        <h4>View Options</h4>
-        <div class="option-item interactive">
-          <span>Night Mode</span>
-          <label class="switch" title="Toggle Night Mode">
-            <input type="checkbox" id="toggle-night-mode">
-            <span class="slider round"></span>
-          </label>
-        </div>
-        <div class="option-item interactive">
-          <span>Enable Moving Map</span>
-          <label class="switch" title="Toggle Moving Map">
-            <input type="checkbox" id="toggle-moving-map">
-            <span class="slider round"></span>
-          </label>
-        </div>
-        <label style="margin-top: 1em;"><input type="checkbox" id="show-graticule" checked> Show Grid</label>
-        <label><input type="checkbox" id="outline-only"> Land Outline Only</label>
-        <!-- Removed Grid Dots, Labels -->
-      </div>
-
-    </div>
-  </div>
-
-  <!-- Overlays Panel -->
-  <div id="overlays-panel" class="sidebar-content-panel">
-    <div class="panel-header">
-      <h3>Data Overlays</h3>
-      <button class="hide-panel-button" title="Hide Panel">✕</button>
-    </div>
-    <div class="panel-inner-content">
-      <div class="menu-section">
-        <h4>Overlay Selection</h4> <!-- Renamed section -->
-        <!-- MagVar Toggle (Replaces Select) -->
-        <div class="overlay-option-item">
-          <label class="switch" title="Toggle Magnetic Variation Overlay">
-            <input type="checkbox" id="toggle-magvar-overlay" checked>
-            <span class="slider round"></span>
-          </label>
-          <span style="margin-left: 5px;">Magnetic Variation</span>
-        </div>
-      </div>
-
-      <div class="menu-section">
-        <h4>Overlay Options</h4> <!-- Renamed section -->
-
-        <!-- Mode Selection -->
-        <div class="overlay-option-item">
-          <div class="overlay-label">Mode:</div>
-          <div class="overlay-value btn-group">
-            <!-- Removed Gradient Button -->
-            <button id="mode-vector" class="display-mode-btn">Vector</button>
-            <button id="mode-isoline" class="display-mode-btn active">Isoline</button>
-          </div>
-        </div>
-
-        <!-- Altitude Control -->
-        <div class="overlay-option-item">
-          <div class="overlay-label">Altitude:</div>
-          <div class="overlay-value">
-            <input type="range" id="height-level" min="0" max="10" value="0" step="1">
-            <span id="height-value">0 km</span>
-          </div>
-        </div>
-
-        <!-- Date Control (NEW) -->
-        <div class="overlay-option-item">
-          <div class="overlay-label">Date:</div>
-          <div class="overlay-value">
-            <input type="number" id="date-year" min="2020" max="2030" step="0.1" style="width: 70px;">
-            <span id="date-value" style="margin-left: 5px;"></span>
-          </div>
-        </div>
-
-        <!-- Opacity Control -->
-        <div class="overlay-option-item">
-          <label for="overlay-opacity">Overlay Opacity</label>
-          <input type="range" id="overlay-opacity" min="0" max="100" value="70">
-        </div>
-
-        <!-- Vector Density (Conditional) -->
-        <div class="overlay-option-item" style="display: none;"> <!-- Initially hidden -->
-          <label for="vector-density">Vector Density</label>
-          <input type="range" id="vector-density" min="1" max="10" value="5">
-        </div>
-
-        <!-- Isoline Spacing (Conditional) -->
-        <div class="overlay-option-item"> <!-- Initially shown (default mode) -->
-          <label for="isoline-spacing">Isoline Spacing</label>
-          <select id="isoline-spacing">
-            <option value="coarse">Coarse</option>
-            <option value="medium" selected>Medium</option>
-            <option value="fine">Fine</option>
-          </select>
-        </div>
-      </div>
-
-    </div>
-  </div>
-
-  <!-- Views Panel (Unchanged) -->
-  <div id="views-panel" class="sidebar-content-panel">
-    <!-- ... existing views panel content ... -->
-    <div class="panel-header">
-      <h3>Globe Views</h3>
-      <button class="hide-panel-button" title="Hide Panel">✕</button>
-    </div>
-    <div class="panel-inner-content">
-      <div class="menu-section">
-        <h4>Projection</h4>
-        <select id="projection-select">
-          <option value="orthographic">Orthographic</option>
-          <option value="equirectangular">Equirectangular</option>
-          <option value="mercator">Mercator</option>
-          <option value="stereographic">Stereographic</option>
-        </select>
-        <label style="margin-top:1em;">Auto-Rotation Speed</label>
-        <input type="range" id="rotation-speed" min="0" max="20" value="0">
-      </div>
-      <div class="menu-section">
-        <h4>Predefined Views</h4>
-        <div class="btn-group">
-          <button id="view-atlantic">Atlantic</button>
-          <button id="view-pacific">Pacific</button>
-          <button id="view-north-america">N. America</button>
-          <button id="view-south-america">S. America</button>
-          <button id="view-europe">Europe</button>
-          <button id="view-africa">Africa</button>
-          <button id="view-asia">Asia</button>
-          <button id="view-australia">Australia</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Settings Panel -->
-  <div id="settings-panel" class="sidebar-content-panel">
-    <div class="panel-header">
-      <h3>Advanced Settings</h3>
-      <button class="hide-panel-button" title="Hide Panel">✕</button>
-    </div>
-    <div class="panel-inner-content">
-      <!-- Globe Colors section removed -->
-      <div class="menu-section">
-        <h3>Grid Settings</h3>
-        <label>Grid Opacity</label>
-        <input type="range" id="grid-opacity" min="0" max="100" value="50">
-        <label>Grid Color</label>
-        <select id="grid-color">
-          <option value="#555555">Gray</option>
-          <option value="#AAAAAA">Light Gray</option>
-          <option value="#FFFFFF">White</option>
-          <option value="#3388BB">Blue</option>
-        </select>
-      </div>
-    </div>
-  </div>
-
-  <!-- About Panel (Unchanged) -->
-  <div id="about-panel" class="sidebar-content-panel">
-    <!-- ... existing about panel content ... -->
-    <div class="panel-header">
-      <h3>About</h3>
-      <button class="hide-panel-button" title="Hide Panel">✕</button>
-    </div>
-    <div class="panel-inner-content">
-      <p>
-        Interactive WGS84 Globe<br>
-        Data: Natural Earth, WMM 2025<br>
-        Source: <span id="data-source-info">Loading...</span> | <span id="data-source-timestamp">Timestamp</span><br>
-        Inspired by <a href="https://github.com/cambecc/earth" target="_blank" style="color: #69c; text-decoration: none;">cambecc/earth</a>.
-      </p>
-    </div>
-  </div>
-
-</div>
-
-<!-- Main Globe Area -->
 <div id="globe-container"></div>
-
-<!-- Overlay Legend (Bottom Right) -->
-<div id="overlay-legend" class="legend">
-  <h3>Legend Title</h3>
-  <div class="legend-content">
-    <div id="legend-bar" class="legend-gradient"></div>
-    <div id="legend-labels" class="legend-labels">
-      <!-- Filled dynamically -->
-    </div>
+<div id="control-bar">
+  <h1>MagVar3D Globe</h1>
+  <div class="slider-bar" style="margin-bottom: 1em;">
+    <label for="zoom-slider" style="margin-right:0.8em;">Zoom</label>
+    <input type="range" id="zoom-slider" min="180" max="650" value="280" step="1">
+  </div>
+  <div class="button-bar">
+    <button class="btn" id="zoom-in" title="Zoom In">+</button>
+    <button class="btn" id="zoom-out" title="Zoom Out">&minus;</button>
+    <button class="btn" id="rotate-left" title="Rotate Left">&#8634;</button>
+    <button class="btn" id="rotate-right" title="Rotate Right">&#8635;</button>
+    <button class="btn" id="rotate-up" title="Rotate Up">&#8593;</button>
+    <button class="btn" id="rotate-down" title="Rotate Down">&#8595;</button>
+  </div>
+  <select id="layer-select" disabled>
+    <option value="magvar">Magnetic Variation (demo)</option>
+    <option value="wind">Wind (coming soon)</option>
+    <option value="temp">Temperature (coming soon)</option>
+  </select>
+  <div id="legend-box">
+    <b>Legend:</b> <span id="legend-content">Land &amp; ocean, magnetic variation (demo)</span>
   </div>
 </div>
-
-<!-- Marker and Info Window -->
-<div id="marker" class="marker" style="display: none;"></div>
-<div id="info-window" class="info-window" style="display: none;"></div>
-
-<!-- Tooltip -->
-<div id="tooltip"></div>
-
-<!-- Footer (Bottom Right, Navigraph style) -->
-<footer>
-  <span id="footer-info">WGS84 Globe | © 2025</span>
-</footer>
-
-<!-- Load D3 and TopoJSON -->
+<div id="status-bar">
+  Drag globe to rotate. Click globe for magnetic variation at that point. Use controls at top left.
+</div>
 <script src="https://d3js.org/d3.v7.min.js"></script>
-<script src="https://d3js.org/topojson.v3.min.js"></script>
-<!-- Load Chroma.js for color scales -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/chroma-js/2.4.2/chroma.min.js"></script>
+<script type="module">
+  import { initGlobe, setZoom, setRotation, getState, zoomIn, zoomOut } from './js/globe.js';
 
-<!-- Load the main application module -->
-<script type="module" src="js/app.js"></script>
+  const globeContainer = document.getElementById('globe-container');
+  initGlobe(globeContainer);
 
-<!-- Add UI Interaction Script -->
-<script src="js/sidebar-ui.js"></script>
+  // Controls logic
+  const zoomInBtn = document.getElementById('zoom-in');
+  const zoomOutBtn = document.getElementById('zoom-out');
+  const zoomSlider = document.getElementById('zoom-slider');
 
+  zoomInBtn.addEventListener('click', () => {
+    zoomIn();
+  });
+  zoomOutBtn.addEventListener('click', () => {
+    zoomOut();
+  });
+  zoomSlider.addEventListener('input', (e) => {
+    setZoom(parseInt(e.target.value));
+  });
+
+  // Rotation controls
+  const ROT_STEP = 15;
+  document.getElementById('rotate-left').addEventListener('click', () => {
+    const s = getState();
+    setRotation([s.rotation[0] - ROT_STEP, s.rotation[1]]);
+  });
+  document.getElementById('rotate-right').addEventListener('click', () => {
+    const s = getState();
+    setRotation([s.rotation[0] + ROT_STEP, s.rotation[1]]);
+  });
+  document.getElementById('rotate-up').addEventListener('click', () => {
+    const s = getState();
+    setRotation([s.rotation[0], Math.max(s.rotation[1] - ROT_STEP, -90)]);
+  });
+  document.getElementById('rotate-down').addEventListener('click', () => {
+    const s = getState();
+    setRotation([s.rotation[0], Math.min(s.rotation[1] + ROT_STEP, 90)]);
+  });
+</script>
 </body>
 </html>
