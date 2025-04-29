@@ -30,7 +30,6 @@ function decimalYearToDate(decimalYear) {
     return date;
 }
 
-
 /**
  * Calculate magnetic variation (declination) using the geomagnetism library.
  * This function now uses the accurate WMM model provided by the library.
@@ -77,22 +76,3 @@ export function calculateMagneticVariation(longitude, latitude, altitudeKm, deci
         return null;
     }
 }
-
-// /**
-//  * Placeholder for any asynchronous initialization if needed in the future.
-//  * Currently, geomagnetism initializes synchronously with bundled coefficients.
-//  * @returns {Promise<boolean>} Always resolves true currently.
-//  */
-// export async function loadWmmData() {
-//     // No external WMM.COF loading needed with this library
-//     console.log("Geomagnetism library initialized with internal WMM model.");
-//     return true; // Indicate success
-// }
-
-// Remove the old functions and variables:
-// - factorial
-// - legendreP
-// - legendrePD
-// - parseWmmCoefficients
-// - wmmCoefficients
-// - wmmEpoch (library handles epoch internally)

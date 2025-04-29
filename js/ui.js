@@ -202,10 +202,9 @@ function setupPanelControlListeners() {
     const dateInput = document.getElementById('date-year');
     const dateValueSpan = document.getElementById('date-value');
     if (dateInput && dateValueSpan) {
-        const currentYear = new Date().getFullYear();
-        dateInput.min = Math.min(2020, Math.floor(config.decimalYear));
-        dateInput.max = Math.max(currentYear + 5, Math.ceil(config.decimalYear));
-        dateInput.step = 0.1;
+        dateInput.min = config.ui.dateYearMin;
+        dateInput.max = config.ui.dateYearMax;
+        dateInput.step = config.ui.dateYearStep;
         dateInput.value = config.decimalYear.toFixed(1);
         dateValueSpan.textContent = config.decimalYear.toFixed(1);
         dateInput.addEventListener('input', () => {
@@ -282,18 +281,8 @@ function setupPanelControlListeners() {
         viewButtons.forEach(button => {
             button.addEventListener('click', () => {
                 const view = button.id.replace('view-', '');
-                const viewTargets = {
-                    'atlantic': [-30, 30],
-                    'pacific': [-170, 0],
-                    'north-america': [-100, 40],
-                    'south-america': [-60, -20],
-                    'europe': [15, 50],
-                    'africa': [20, 0],
-                    'asia': [90, 40],
-                    'australia': [135, -25]
-                };
-                if (viewTargets[view] && callbacks.navigateTo) {
-                    callbacks.navigateTo(...viewTargets[view]);
+                if (config.ui.viewTargets[view] && callbacks.navigateTo) {
+                    callbacks.navigateTo(...config.ui.viewTargets[view]);
                 }
             });
         });
@@ -475,7 +464,7 @@ function handleTouchMove(event) {
         const touch = event.touches[0];
         const dx = touch.clientX - dragStartCoords.x;
         const dy = touch.clientY - dragStartCoords.y;
-        const sensitivityFactor = 1 / (appState.currentScale * 0.015);
+        const sensitivityFactor = 1 / (appState.currentScale * config.ui.dragSensitivityFactor);
         const effectiveSensitivity = Math.max(0.05, Math.min(1, config.sensitivity * sensitivityFactor));
 
         const rotation = [...dragStartRotation];
@@ -506,7 +495,7 @@ function handleWheel(event) {
     event.preventDefault();
     if (callbacks.startStopAutoRotate) callbacks.startStopAutoRotate(false);
 
-    const scaleFactor = event.deltaY < 0 ? 1.15 : 1 / 1.15;
+    const scaleFactor = event.deltaY < 0 ? config.ui.zoomScaleFactor : 1 / config.ui.zoomScaleFactor;
     const newScale = Math.max(config.minScale, Math.min(config.maxScale, appState.currentScale * scaleFactor));
 
     if (Math.abs(newScale - appState.currentScale) > 0.01) {
@@ -552,7 +541,7 @@ function handleTooltipMove(event) {
         } else {
             hideTooltip();
         }
-    }, 100);
+    }, config.ui.tooltipDelayMs);
 }
 
 function handleTooltipOut(event) {
