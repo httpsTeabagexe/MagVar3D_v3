@@ -36,7 +36,7 @@ body {
     z-index: 200;
     display: flex;
     flex-direction: column;
-    padding-top: 5px; /* Reduced padding */
+    padding-top: 10px;
     user-select: none;
     /* transition: padding-top 0.25s ease-in-out; -- Removed transition */
 }
@@ -48,20 +48,20 @@ body {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 12px 0;
+    padding: 18px 0 10px 0;
     cursor: pointer;
     transition: background-color 0.15s ease;
     border-left: 3px solid transparent;
     margin-left: -1px;
 }
 .sidebar-item .icon {
-    font-size: 18px;
-    margin-bottom: 5px;
+    font-size: 22px;
+    margin-bottom: 4px;
     color: var(--navigraph-text-secondary);
     transition: color 0.15s ease;
 }
 .sidebar-item .label {
-    font-size: 9px;
+    font-size: 10px;
     text-transform: uppercase;
     color: var(--navigraph-text-secondary);
     transition: color 0.15s ease;
@@ -93,6 +93,7 @@ body {
     overflow: hidden;
     pointer-events: none;
     height: 100%; /* Full height */
+    transition: left 0.25s ease-in-out, width 0.25s ease-in-out, opacity 0.25s ease-in-out, transform 0.25s ease-in-out; /* Keep panel slide transition */
     /* transition: top 0.25s ease-in-out, height 0.25s ease-in-out, left 0.25s ease-in-out, width 0.25s ease-in-out; -- Removed transition */
 }
 /* body.top-bar-hidden #sidebar-content -- Removed selector */
@@ -116,7 +117,7 @@ body {
 }
 
 .panel-inner-content {
-    padding: 0 15px 20px 15px;
+    padding: 18px;
     flex-grow: 1;
     overflow-y: auto;
     &::-webkit-scrollbar { width: 6px; }
@@ -134,7 +135,7 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 15px 15px;
+    padding: 18px 18px 12px 18px;
     border-bottom: 1px solid var(--navigraph-border);
     flex-shrink: 0;
 }
@@ -144,7 +145,7 @@ body {
     padding-bottom: 0;
     color: var(--navigraph-text-secondary);
     font-weight: 600;
-    font-size: 12px;
+    font-size: 13px;
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
@@ -153,7 +154,7 @@ body {
     background: none;
     border: none;
     color: var(--navigraph-text-secondary);
-    font-size: 18px;
+    font-size: 22px;
     font-weight: normal;
     cursor: pointer;
     padding: 0 5px;
@@ -167,7 +168,7 @@ body {
 }
 
 /* Panel Content Styling */
-.menu-section { margin-bottom: 1.5em; }
+.menu-section { margin-bottom: 2em; }
 
 .menu-section h4 {
     font-size: 11px;
@@ -552,6 +553,20 @@ input:checked + .slider:before { transform: translateX(14px); }
     left: 0;
     background: #181818;
     z-index: 0;
+    position: absolute;
+    left: 60px;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    overflow: hidden;
+}
+body.panel-visible #globe-container {
+    left: 380px; /* 60px sidebar + 320px panel */
+}
+canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
 }
 
 #globe-svg {
@@ -588,6 +603,27 @@ footer {
     z-index: 100;
 }
 #footer-info { display: block; }
+footer#footer-info {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(24,24,24,0.97);
+    color: #aaa;
+    font-size: 12px;
+    padding: 8px 24px;
+    z-index: 300;
+    text-align: right;
+    border-top: 1px solid #232323;
+}
+footer#footer-info a {
+    color: #bbb;
+    text-decoration: none;
+    margin-left: 18px;
+}
+footer#footer-info a:hover {
+    text-decoration: underline;
+}
 
 /* Marker and Info Window */
 .marker { position: absolute; width: 10px; height: 10px; border-radius: 50%; background: rgba(74, 144, 226, 0.8); border: 1px solid rgba(255, 255, 255, 0.7); transform: translate(-50%, -50%); pointer-events: none; z-index: 990; box-shadow: 0 0 6px rgba(74, 144, 226, 0.6); }
@@ -614,9 +650,7 @@ body.panel-visible #sidebar-content {
     transition: none; /* Remove transitions related to top bar */
 }
 
-/* Adjust sidebar-content top, height, and transitions */
-#sidebar-content {
-    top: 0;
-    height: 100%;
-    transition: left 0.25s ease-in-out, width 0.25s ease-in-out, opacity 0.25s ease-in-out, transform 0.25s ease-in-out; /* Keep panel slide transition */
+/* Hide old layouts */
+.settings-layout, .map-view-container {
+    display: none !important;
 }

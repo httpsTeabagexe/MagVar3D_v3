@@ -1,7 +1,14 @@
 // Aggressively optimized, tile-based LOD globe rendering inspired by cambecc/earth.
 // Only visible land is loaded and rendered at either low or high resolution, high-res only for visible sector.
 
-import { config } from './config.js';
+import { config, WGS84, ZOOM_LEVELS, LOD_SCALES } from './config.js';
+import {
+    dataAvailable,
+    placeholderAirports,
+    placeholderWaypoints,
+    placeholderNavaids
+} from './data.js'; // Added placeholder data imports
+
 
 let projection, path, graticule, context, width, height, centerX, centerY;
 let landTiles = {}; // { tileId: { geojson, loaded, features } }
@@ -11,23 +18,15 @@ let currentScale = config.defaultScale || 280;
 let currentRotation = [0, 0];
 let rafHandle = null;
 let dragging = false;
-let lastPos = null;
-
-// Tile and LOD settings
-const LOD_SCALES = [
-    { max: 340, suffix: '110m', tileSize: 36 }, // Low LOD (coarse, use ne_110m)
-    { max: 520, suffix: '50m', tileSize: 18 },  // Med LOD (medium, use ne_50m)
-    { max: 9999, suffix: '10m', tileSize: 6 },  // High LOD (fine, use ne_10m)
-];
+let lastPos = null; // Last mouse position for dragging
 
 // Tile load queue management
-const MAX_CONCURRENT_TILE_REQUESTS = 6;
 let tileQueue = [];
 let tileRequestsInFlight = 0;
+const MAX_TILE_REQUESTS = 6; // Max concurrent tile loads
 
 // Define zoom levels similar to cambecc/earth (example values)
 // You can adjust these to match your preferred "snap" levels and min/max
-const ZOOM_LEVELS = [180, 240, 280, 320, 370, 420, 480, 560, 650];
 let zoomLevelIdx = ZOOM_LEVELS.findIndex(z => z >= currentScale);
 if (zoomLevelIdx === -1) zoomLevelIdx = ZOOM_LEVELS.length - 1;
 
@@ -130,11 +129,40 @@ function getVisibleTiles(tileSize, suffix) {
             // In-sphere check
             if ((dx * dx + dy * dy) < (projection.scale() * projection.scale())) {
                 const id = `${suffix}_${lon}_${lat}`;
-                tiles.push({ id, lon, lat, tileSize, suffix });
+                tiles.push({ id, lon, lat, tileSize, suffix, url: `tiles/land_${suffix}_${lon}_${lat}.json` });
             }
         }
     }
     return tiles;
+}
+
+// let tileQueue = [];
+// let tileRequestsInFlight = 0;
+// const MAX_TILE_REQUESTS = 6; // Max concurrent tile loads
+
+function processTileQueue() {
+    while (tileQueue.length > 0 && tileRequestsInFlight < MAX_TILE_REQUESTS) {
+        const { tile, cb } = tileQueue.shift();
+        tileRequestsInFlight++;
+        fetch(tile.url).then(res => {
+            if (!res.ok) throw new Error(`Failed to load tile: ${res.status}`);
+            return res.json();
+        }).then(data => {
+            landTiles[tile.id].loaded = true;
+            landTiles[tile.id].geojson = data;
+            landTiles[tile.id].features = data && data.features ? data.features : [];
+            tileRequestsInFlight--;
+            cb(landTiles[tile.id]);
+            processTileQueue();
+        }).catch(() => {
+            landTiles[tile.id].loaded = true;
+            landTiles[tile.id].geojson = null;
+            landTiles[tile.id].features = [];
+            tileRequestsInFlight--;
+            cb(landTiles[tile.id]);
+            processTileQueue();
+        });
+    }
 }
 
 function loadTile(tile, cb) {
@@ -149,27 +177,30 @@ function loadTile(tile, cb) {
     processTileQueue();
 }
 
-function processTileQueue() {
-    while (tileRequestsInFlight < MAX_CONCURRENT_TILE_REQUESTS && tileQueue.length > 0) {
-        const { tile, cb } = tileQueue.shift();
-        tileRequestsInFlight++;
-        const url = `MagVar3D_v3/tiles/land_${tile.suffix}_${tile.lon}_${tile.lat}.json`;
-        d3.json(url).then(data => {
-            landTiles[tile.id].geojson = data;
-            landTiles[tile.id].loaded = true;
-            landTiles[tile.id].features = data && data.features ? data.features : [];
-            tileRequestsInFlight--;
-            cb(landTiles[tile.id]);
-            processTileQueue();
-        }).catch(() => {
-            landTiles[tile.id].loaded = true;
-            landTiles[tile.id].geojson = null;
-            landTiles[tile.id].features = [];
-            tileRequestsInFlight--;
-            cb(landTiles[tile.id]);
-            processTileQueue();
-        });
+
+function drawLand() {
+    if (!landDataLowRes && !landDataHighRes) return;
+
+    const landData = currentScale > 300 && landDataHighRes ? landDataHighRes : landDataLowRes;
+    if (!landData) return;
+
+    context.save();
+    context.beginPath();
+
+    // Draw land shapes
+    const geoPath = d3.geoPath(projection, context);
+    geoPath(landData);
+
+    context.fillStyle = config.landFillColor || "#3A5F0B";
+    context.fill();
+
+    if (config.landStrokeWidth > 0) {
+        context.strokeStyle = config.landStrokeColor || "#2A4F0A";
+        context.lineWidth = config.landStrokeWidth;
+        context.stroke();
     }
+
+    context.restore();
 }
 
 export function redraw(force = false) {
@@ -191,13 +222,15 @@ export function redraw(force = false) {
     context.fill();
 
     // Graticule
-    context.beginPath();
-    path(graticule);
-    context.strokeStyle = config.graticuleColor;
-    context.globalAlpha = config.graticuleOpacity;
-    context.lineWidth = config.graticuleWidth;
-    context.stroke();
-    context.globalAlpha = 1.0;
+    if (config.showGraticule) { // Check if graticule should be shown
+        context.beginPath();
+        path(graticule);
+        context.strokeStyle = config.graticuleColor;
+        context.globalAlpha = config.graticuleOpacity;
+        context.lineWidth = config.graticuleWidth;
+        context.stroke();
+        context.globalAlpha = 1.0;
+    }
 
     let needAnotherDraw = false;
 
@@ -241,6 +274,21 @@ export function redraw(force = false) {
         context.stroke();
     }
 
+    // --- Render Aviation Data ---
+    if (config.showAirports && dataAvailable.airports) {
+        drawAirports(placeholderAirports);
+    }
+    if (config.showWaypoints && dataAvailable.waypoints) {
+        drawWaypoints(placeholderWaypoints);
+    }
+    if (config.showNavaids && dataAvailable.navaids) {
+        drawNavaids(placeholderNavaids);
+    }
+    if (config.showMagVarOverlay && dataAvailable.magvar) {
+        drawMagVarOverlay();
+    }
+
+
     // Marker style from cambecc/earth
     if (marker) {
         const [x, y] = projection([marker.lon, marker.lat]);
@@ -277,6 +325,113 @@ export function redraw(force = false) {
 
     if (needAnotherDraw) requestRedraw();
 }
+
+
+// --- Aviation Data Rendering Functions ---
+
+function drawAirports(airports) {
+    if (!airports) return;
+    context.save();
+    context.fillStyle = config.airportColor || "blue"; // Default color if not in config
+    context.strokeStyle = config.airportStrokeColor || "white";
+    context.lineWidth = config.airportStrokeWidth || 1;
+    const airportRadius = config.airportRadius || 3;
+
+    airports.forEach(airport => {
+        const [x, y] = projection([airport.lon, airport.lat]);
+        // Basic visibility check (very rough)
+        if (x === undefined || y === undefined || x < 0 || x > width || y < 0 || y > height) {
+            const [cx, cy] = projection.invert([centerX, centerY]);
+            const distance = d3.geoDistance([airport.lon, airport.lat], [cx,cy]) * WGS84.radius;
+            if (distance > WGS84.radius * Math.PI / 2.1) return; // roughly check if on visible hemisphere
+        }
+
+
+        context.beginPath();
+        context.arc(x, y, airportRadius, 0, 2 * Math.PI);
+        context.fill();
+        if (config.airportStrokeWidth > 0) {
+            context.stroke();
+        }
+    });
+    context.restore();
+}
+
+function drawWaypoints(waypoints) {
+    if (!waypoints) return;
+    context.save();
+    context.fillStyle = config.waypointColor || "green";
+    context.strokeStyle = config.waypointStrokeColor || "white";
+    context.lineWidth = config.waypointStrokeWidth || 0.5;
+    const waypointSize = config.waypointSize || 4; // Size of the triangle side
+
+    waypoints.forEach(wp => {
+        const [x, y] = projection([wp.lon, wp.lat]);
+        if (x === undefined || y === undefined || x < 0 || x > width || y < 0 || y > height) {
+            const [cx, cy] = projection.invert([centerX, centerY]);
+            const distance = d3.geoDistance([wp.lon, wp.lat], [cx,cy]) * WGS84.radius;
+            if (distance > WGS84.radius * Math.PI / 2.1) return;
+        }
+
+        context.beginPath();
+        context.moveTo(x, y - waypointSize / Math.sqrt(3) * 2/3); // Top point of triangle
+        context.lineTo(x - waypointSize / 2, y + waypointSize / Math.sqrt(3) * 1/3);
+        context.lineTo(x + waypointSize / 2, y + waypointSize / Math.sqrt(3) * 1/3);
+        context.closePath();
+        context.fill();
+        if (config.waypointStrokeWidth > 0) {
+            context.stroke();
+        }
+    });
+    context.restore();
+}
+
+function drawNavaids(navaids) {
+    if (!navaids) return;
+    context.save();
+    context.fillStyle = config.navaidColor || "purple";
+    context.strokeStyle = config.navaidStrokeColor || "white";
+    context.lineWidth = config.navaidStrokeWidth || 1;
+    const navaidSize = config.navaidSize || 5; // Size of the square
+
+    navaids.forEach(navaid => {
+        const [x, y] = projection([navaid.lon, navaid.lat]);
+        if (x === undefined || y === undefined || x < 0 || x > width || y < 0 || y > height) {
+            const [cx, cy] = projection.invert([centerX, centerY]);
+            const distance = d3.geoDistance([navaid.lon, navaid.lat], [cx,cy]) * WGS84.radius;
+            if (distance > WGS84.radius * Math.PI / 2.1) return;
+        }
+
+        context.beginPath();
+        context.rect(x - navaidSize / 2, y - navaidSize / 2, navaidSize, navaidSize);
+        context.fill();
+        if (config.navaidStrokeWidth > 0) {
+            context.stroke();
+        }
+    });
+    context.restore();
+}
+
+/**
+ * Stub function for rendering Magnetic Variation overlay.
+ * This will need to be implemented with actual data and rendering logic.
+ */
+function drawMagVarOverlay() {
+    // console.log("Drawing Magnetic Variation Overlay (Not Implemented Yet)");
+    // Placeholder: Draw a semi-transparent red overlay for demonstration
+    // context.save();
+    // context.fillStyle = "rgba(255, 0, 0, 0.1)";
+    // context.beginPath();
+    // context.arc(centerX, centerY, projection.scale(), 0, 2 * Math.PI);
+    // context.fill();
+    // context.restore();
+
+    // Actual implementation would involve:
+    // 1. Getting MagVar data for the visible area (e.g., from WMM model)
+    // 2. Creating a visual representation (e.g., contour lines, color raster)
+    // 3. Drawing it onto the canvas, projected correctly.
+}
+
 
 // Fake MagVar value for demo
 function getFakeMagVar(lon, lat) {
