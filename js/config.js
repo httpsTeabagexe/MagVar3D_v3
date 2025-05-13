@@ -23,7 +23,11 @@ export const config = {
     showAirports: true,  // Example
     showWaypoints: true, // Example
     showNavaids: true,   // Example
-    showMagVarOverlay: true // Example
+    showMagVarOverlay: true, // Example
+    navaidStrokeWidth: 0.7,
+    navaidSize: 5,
+    navaidStrokeColor: "white",
+    navaidColor: "purple"
 };
 
 // Add these exports:

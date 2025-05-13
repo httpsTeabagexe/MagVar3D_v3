@@ -86,8 +86,24 @@
     &copy; 2023 EarthVie &mdash; <a href="#">Support</a> &middot; <a href="#">Terms</a> &middot; <a href="#">Privacy</a>
   </footer>
   <script src="https://d3js.org/d3.v7.min.js"></script>
+
   <script type="module">
-    import { initGlobe } from './js/globe.js';
+    import { setupSvgGlobe } from './js/svg-globe-cambecc.js';
+    // Remove import/initGlobe from globe.js
+
+    fetch("MagVar3D_v3/ne_110m_land.geojson")
+            .then(res => res.json())
+            .then(landData => {
+              setupSvgGlobe(
+                      document.getElementById("globe-container"),
+                      landData,
+                      { width: 900, height: 900 }
+              );
+            });
+  </script>
+
+  <script type="module">
+    // import { initGlobe } from './js/globe.js';
     import { loadAllData } from './js/data.js';
 
     // Sidebar logic
@@ -114,10 +130,19 @@
     });
 
     // Globe rendering
-    const globeContainer = document.getElementById('globe-container');
-    loadAllData().then(() => {
-      initGlobe(globeContainer);
-    });
+    // const globeContainer = document.getElementById('globe-container');
+    // loadAllData().then(() => {
+    //   initGlobe(globeContainer);
+    // });
+    fetch("MagVar3D_v3/ne_110m_land.geojson")
+            .then(res => res.json())
+            .then(landData => {
+              setupSvgGlobe(
+                      document.getElementById("globe-container"),
+                      landData,
+                      { width: 900, height: 900 } // adjust as needed
+              );
+            });
   </script>
 </body>
 </html>

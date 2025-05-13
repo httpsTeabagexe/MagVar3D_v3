@@ -24,26 +24,26 @@ export function initializeRenderer(_svg, _globeGroup, _earthBoundary, _overlayGr
 /**
  * Render the globe and all visible layers.
  */
-export function renderGlobe(scale, rotation) {
-    // Update projection parameters
-    projection
-        .scale(scale)
-        .rotate(rotation)
-        .translate([config.width / 2, config.height / 2])
-        .clipAngle(90);
-
-    // Update ocean boundary
-    earthBoundary
-        .attr('rx', scale)
-        .attr('ry', scale)
-        .attr('fill', config.oceanColor);
-
-    // Draw land and overlays
-    drawLand();
-    drawGraticule();
-    if (config.showAirspaces) drawAirspaces();
-    if (config.showAirports) drawAirports();
-}
+// export function renderGlobe(scale, rotation) {
+//     // Update projection parameters
+//     projection
+//         .scale(scale)
+//         .rotate(rotation)
+//         .translate([config.width / 2, config.height / 2])
+//         .clipAngle(90);
+//
+//     // Update ocean boundary
+//     earthBoundary
+//         .attr('rx', scale)
+//         .attr('ry', scale)
+//         .attr('fill', config.oceanColor);
+//
+//     // Draw land and overlays
+//     drawLand();
+//     drawGraticule();
+//     if (config.showAirspaces) drawAirspaces();
+//     if (config.showAirports) drawAirports();
+// }
 
 /**
  * Draw land using the shared projection.

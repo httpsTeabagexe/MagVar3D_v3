@@ -1,9 +1,10 @@
 // js/app.js
+import { setupSvgGlobe } from "./svg-globe-cambecc.js";
 import { config } from './config.js';
 import { loadAllData, dataAvailable } from './data.js'; // Import dataAvailable
 import { initializeRenderer, renderGlobe, renderOverlays } from './renderer.js'; // Import renderOverlays
-import { initializeUI } from './ui.js';
-import { initGlobe } from './globe.js'; // Import initGlobe
+// import { initializeUI } from './ui.js';
+//import { initGlobe } from './globe.js'; // Import
 
 // --- Constants ---
 const ANIMATION_DURATION = 1500;
@@ -184,19 +185,70 @@ function startIntroAnimation() {
             return (t) => {
                 if (!appState.isAnimating) return;
                 updateRotation(r(t));
-                scheduleRender(true); // Force render during animation
+                // scheduleRender(true); // Force render during animation
+                fetch("MagVar3D_v3/ne_110m_land.geojson")
+                    .then(res => res.json())
+                    .then(landData => {
+                        setupSvgGlobe(
+                            document.getElementById("globe-container"),
+                            landData,
+                            {
+                                width: config.width || 900,
+                                height: config.height || 900,
+                                landColor: config.landColor || "#72B092",
+                                oceanColor: config.oceanColor || "#001D3D",
+                                landStrokeColor: config.landStrokeColor || "#333",
+                                graticuleColor: config.graticuleColor || "#888",
+                                graticuleOpacity: config.graticuleOpacity ?? 0.7
+                            }
+                        );
+                    });
             };
         })
         .on("end", () => {
             updateAnimating(false);
             stopRotation(); // Stop rotation flag
-            scheduleRender(true); // Final render
+            // scheduleRender(true); // Final render
+            fetch("MagVar3D_v3/ne_110m_land.geojson")
+                .then(res => res.json())
+                .then(landData => {
+                    setupSvgGlobe(
+                        document.getElementById("globe-container"),
+                        landData,
+                        {
+                            width: config.width || 900,
+                            height: config.height || 900,
+                            landColor: config.landColor || "#72B092",
+                            oceanColor: config.oceanColor || "#001D3D",
+                            landStrokeColor: config.landStrokeColor || "#333",
+                            graticuleColor: config.graticuleColor || "#888",
+                            graticuleOpacity: config.graticuleOpacity ?? 0.7
+                        }
+                    );
+                });
             if (config.rotationSpeed > 0) startStopAutoRotate(true);
         })
         .on("interrupt", () => {
             updateAnimating(false);
             stopRotation(); // Stop rotation flag
-            scheduleRender(true); // Render interrupted state
+            // scheduleRender(true); // Render interrupted state
+            fetch("MagVar3D_v3/ne_110m_land.geojson")
+                .then(res => res.json())
+                .then(landData => {
+                    setupSvgGlobe(
+                        document.getElementById("globe-container"),
+                        landData,
+                        {
+                            width: config.width || 900,
+                            height: config.height || 900,
+                            landColor: config.landColor || "#72B092",
+                            oceanColor: config.oceanColor || "#001D3D",
+                            landStrokeColor: config.landStrokeColor || "#333",
+                            graticuleColor: config.graticuleColor || "#888",
+                            graticuleOpacity: config.graticuleOpacity ?? 0.7
+                        }
+                    );
+                });
         });
 }
 
@@ -209,7 +261,7 @@ function startIntroAnimation() {
 function navigateTo(targetLon, targetLat) {
     if (appState.isAnimating) return;
     startStopAutoRotate(false); // Stop rotation during navigation
-    startRotation(); // Start rotation flag
+    // startRotation(); // Start rotation flag
 
     const startRotation = [...appState.currentRotation];
     const normTargetLon = normalizeLongitude(targetLon);
@@ -230,20 +282,71 @@ function navigateTo(targetLon, targetLat) {
                 const current = rInterpolate(t);
                 current[0] = normalizeLongitude(current[0]);
                 updateRotation(current);
-                scheduleRender(true); // Force render during animation
+                // scheduleRender(true); // Force render during animation
+                fetch("MagVar3D_v3/ne_110m_land.geojson")
+                    .then(res => res.json())
+                    .then(landData => {
+                        setupSvgGlobe(
+                            document.getElementById("globe-container"),
+                            landData,
+                            {
+                                width: config.width || 900,
+                                height: config.height || 900,
+                                landColor: config.landColor || "#72B092",
+                                oceanColor: config.oceanColor || "#001D3D",
+                                landStrokeColor: config.landStrokeColor || "#333",
+                                graticuleColor: config.graticuleColor || "#888",
+                                graticuleOpacity: config.graticuleOpacity ?? 0.7
+                            }
+                        );
+                    });
             };
         })
         .on("end", () => {
             updateAnimating(false);
             stopRotation(); // Stop rotation flag
             updateRotation([normTargetLon, targetLat, startRotation[2]]);
-            scheduleRender(true); // Final render
+            // scheduleRender(true); // Final render
+            fetch("MagVar3D_v3/ne_110m_land.geojson")
+                .then(res => res.json())
+                .then(landData => {
+                    setupSvgGlobe(
+                        document.getElementById("globe-container"),
+                        landData,
+                        {
+                            width: config.width || 900,
+                            height: config.height || 900,
+                            landColor: config.landColor || "#72B092",
+                            oceanColor: config.oceanColor || "#001D3D",
+                            landStrokeColor: config.landStrokeColor || "#333",
+                            graticuleColor: config.graticuleColor || "#888",
+                            graticuleOpacity: config.graticuleOpacity ?? 0.7
+                        }
+                    );
+                });
             if (config.rotationSpeed > 0) startStopAutoRotate(true);
         })
         .on("interrupt", () => {
             updateAnimating(false);
             stopRotation(); // Stop rotation flag
-            scheduleRender(true); // Render interrupted state
+            // scheduleRender(true); // Render interrupted state
+            fetch("MagVar3D_v3/ne_110m_land.geojson")
+                .then(res => res.json())
+                .then(landData => {
+                    setupSvgGlobe(
+                        document.getElementById("globe-container"),
+                        landData,
+                        {
+                            width: config.width || 900,
+                            height: config.height || 900,
+                            landColor: config.landColor || "#72B092",
+                            oceanColor: config.oceanColor || "#001D3D",
+                            landStrokeColor: config.landStrokeColor || "#333",
+                            graticuleColor: config.graticuleColor || "#888",
+                            graticuleOpacity: config.graticuleOpacity ?? 0.7
+                        }
+                    );
+                });
             if (config.rotationSpeed > 0) startStopAutoRotate(true);
         });
 }
@@ -299,8 +402,26 @@ function handleResize() {
         // Recenter the globe group
         globeGroup.attr('transform', `translate(${config.width / 2}, ${config.height / 2})`);
         // Re-render the globe
-        scheduleRender(true);
+        // scheduleRender(true);
+        fetch("MagVar3D_v3/ne_110m_land.geojson")
+            .then(res => res.json())
+            .then(landData => {
+                setupSvgGlobe(
+                    document.getElementById("globe-container"),
+                    landData,
+                    {
+                        width: config.width || 900,
+                        height: config.height || 900,
+                        landColor: config.landColor || "#72B092",
+                        oceanColor: config.oceanColor || "#001D3D",
+                        landStrokeColor: config.landStrokeColor || "#333",
+                        graticuleColor: config.graticuleColor || "#888",
+                        graticuleOpacity: config.graticuleOpacity ?? 0.7
+                    }
+                );
+            });
     }
+
 }
 
 /**
@@ -309,7 +430,24 @@ function handleResize() {
 function startRotation() {
     appState.isRotating = true;
     // Optionally: re-render without overlays
-    scheduleRender(true);
+    // scheduleRender(true);
+    fetch("MagVar3D_v3/ne_110m_land.geojson")
+        .then(res => res.json())
+        .then(landData => {
+            setupSvgGlobe(
+                document.getElementById("globe-container"),
+                landData,
+                {
+                    width: config.width || 900,
+                    height: config.height || 900,
+                    landColor: config.landColor || "#72B092",
+                    oceanColor: config.oceanColor || "#001D3D",
+                    landStrokeColor: config.landStrokeColor || "#333",
+                    graticuleColor: config.graticuleColor || "#888",
+                    graticuleOpacity: config.graticuleOpacity ?? 0.7
+                }
+            );
+        });
 }
 
 /**
@@ -317,7 +455,24 @@ function startRotation() {
  */
 function stopRotation() {
     appState.isRotating = false;
-    scheduleRender(true);
+    // scheduleRender(true);
+    fetch("MagVar3D_v3/ne_110m_land.geojson")
+        .then(res => res.json())
+        .then(landData => {
+            setupSvgGlobe(
+                document.getElementById("globe-container"),
+                landData,
+                {
+                    width: config.width || 900,
+                    height: config.height || 900,
+                    landColor: config.landColor || "#72B092",
+                    oceanColor: config.oceanColor || "#001D3D",
+                    landStrokeColor: config.landStrokeColor || "#333",
+                    graticuleColor: config.graticuleColor || "#888",
+                    graticuleOpacity: config.graticuleOpacity ?? 0.7
+                }
+            );
+        });
 }
 
 /**
@@ -358,8 +513,26 @@ function init() {
                 //scheduleRender(true); // Initial render uses low-res data
                 //startIntroAnimation(); // Start animation
                 const container = document.getElementById('globe-container');
-                const globe = initGlobe(container);
+                // const globe = initGlobe(container);
+                fetch("./MagVar3D_v3/ne_110m_land.geojson")
+                    .then(res => res.json())
+                    .then(landData => {
+                        setupSvgGlobe(
+                            document.getElementById("globe-container"),
+                            landData,
+                            {
+                                width: config.width || 900,
+                                height: config.height || 900,
+                                landColor: config.landColor || "#72B092",
+                                oceanColor: config.oceanColor || "#001D3D",
+                                landStrokeColor: config.landStrokeColor || "#333",
+                                graticuleColor: config.graticuleColor || "#888",
+                                graticuleOpacity: config.graticuleOpacity ?? 0.7
+                            }
+                        );
+                    });
                 // Example: auto-rotation
+
                 let rotation = 0;
                 let rotationSpeed = 0;
 

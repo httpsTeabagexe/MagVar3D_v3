@@ -30,72 +30,72 @@ const MAX_TILE_REQUESTS = 6; // Max concurrent tile loads
 let zoomLevelIdx = ZOOM_LEVELS.findIndex(z => z >= currentScale);
 if (zoomLevelIdx === -1) zoomLevelIdx = ZOOM_LEVELS.length - 1;
 
-export function initGlobe(container) {
-    width = container.clientWidth;
-    height = container.clientHeight;
-    centerX = width / 2;
-    centerY = height / 2;
-
-    // Main canvas
-    const canvas = d3.select(container).append("canvas")
-        .attr("width", width)
-        .attr("height", height)
-        .node();
-    context = canvas.getContext("2d");
-
-    // D3 projection and path
-    projection = d3.geoOrthographic()
-        .scale(currentScale)
-        .translate([centerX, centerY])
-        .rotate(currentRotation)
-        .clipAngle(90);
-
-    path = d3.geoPath(projection, context);
-    graticule = d3.geoGraticule10();
-
-    // Interactions
-    canvas.addEventListener('mousedown', e => {
-        lastPos = [e.clientX, e.clientY];
-        dragging = true;
-    });
-    canvas.addEventListener('mouseup', e => {
-        dragging = false;
-        if (Math.abs(e.clientX - lastPos[0]) < 4 && Math.abs(e.clientY - lastPos[1]) < 4) {
-            const [x, y] = [e.offsetX, e.offsetY];
-            const coords = projection.invert([x, y]);
-            if (coords) {
-                marker = { lon: coords[0], lat: coords[1] };
-                overlayInfo = {
-                    lon: marker.lon,
-                    lat: marker.lat,
-                    info: `MagVar: ${getFakeMagVar(marker.lon, marker.lat)}°`
-                };
-                redraw(true);
-                showOverlayInfo(overlayInfo);
-            }
-        }
-    });
-    window.addEventListener('mousemove', e => {
-        if (!dragging) return;
-        const dx = e.clientX - lastPos[0];
-        const dy = e.clientY - lastPos[1];
-        lastPos = [e.clientX, e.clientY];
-        currentRotation[0] += dx * 0.5;
-        currentRotation[1] = Math.max(-90, Math.min(90, currentRotation[1] - dy * 0.5));
-        projection.rotate(currentRotation);
-        requestRedraw();
-    });
-    window.addEventListener('mouseup', () => { dragging = false; });
-
-    // Zoom with mouse wheel
-    canvas.addEventListener('wheel', (e) => {
-        e.preventDefault();
-        setZoom(currentScale + (e.deltaY < 0 ? 15 : -15));
-    }, { passive: false });
-
-    // Initial tile load & draw
-    redraw(true);
-}
+// export function initGlobe(container) {
+//     width = container.clientWidth;
+//     height = container.clientHeight;
+//     centerX = width / 2;
+//     centerY = height / 2;
+//
+//     // Main canvas
+//     const canvas = d3.select(container).append("canvas")
+//         .attr("width", width)
+//         .attr("height", height)
+//         .node();
+//     context = canvas.getContext("2d");
+//
+//     // D3 projection and path
+//     projection = d3.geoOrthographic()
+//         .scale(currentScale)
+//         .translate([centerX, centerY])
+//         .rotate(currentRotation)
+//         .clipAngle(90);
+//
+//     path = d3.geoPath(projection, context);
+//     graticule = d3.geoGraticule10();
+//
+//     // Interactions
+//     canvas.addEventListener('mousedown', e => {
+//         lastPos = [e.clientX, e.clientY];
+//         dragging = true;
+//     });
+//     canvas.addEventListener('mouseup', e => {
+//         dragging = false;
+//         if (Math.abs(e.clientX - lastPos[0]) < 4 && Math.abs(e.clientY - lastPos[1]) < 4) {
+//             const [x, y] = [e.offsetX, e.offsetY];
+//             const coords = projection.invert([x, y]);
+//             if (coords) {
+//                 marker = { lon: coords[0], lat: coords[1] };
+//                 overlayInfo = {
+//                     lon: marker.lon,
+//                     lat: marker.lat,
+//                     info: `MagVar: ${getFakeMagVar(marker.lon, marker.lat)}°`
+//                 };
+//                 redraw(true);
+//                 showOverlayInfo(overlayInfo);
+//             }
+//         }
+//     });
+//     window.addEventListener('mousemove', e => {
+//         if (!dragging) return;
+//         const dx = e.clientX - lastPos[0];
+//         const dy = e.clientY - lastPos[1];
+//         lastPos = [e.clientX, e.clientY];
+//         currentRotation[0] += dx * 0.5;
+//         currentRotation[1] = Math.max(-90, Math.min(90, currentRotation[1] - dy * 0.5));
+//         projection.rotate(currentRotation);
+//         requestRedraw();
+//     });
+//     window.addEventListener('mouseup', () => { dragging = false; });
+//
+//     // Zoom with mouse wheel
+//     canvas.addEventListener('wheel', (e) => {
+//         e.preventDefault();
+//         setZoom(currentScale + (e.deltaY < 0 ? 15 : -15));
+//     }, { passive: false });
+//
+//     // Initial tile load & draw
+//     redraw(true);
+// }
 
 function requestRedraw() {
     if (!rafHandle) {
