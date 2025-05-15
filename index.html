@@ -33,16 +33,17 @@
           <h4>Map Layers</h4>
           <ul class="layer-list">
             <li class="layer-item interactive">
-              <span><input type="checkbox" id="toggle-layer-airports" checked> Airports</span>
+              <span><input type="checkbox" id="toggle-layer-airports" checked><label for="toggle-layer-airports"> Airports</label></span>
             </li>
             <li class="layer-item interactive">
-              <span><input type="checkbox" id="toggle-layer-waypoints" checked> Waypoints</span>
+              <span><input type="checkbox" id="toggle-layer-waypoints" checked><label for="toggle-layer-waypoints"> Waypoints</label></span>
             </li>
             <li class="layer-item interactive">
-              <span><input type="checkbox" id="toggle-layer-navaids" checked> Navaids</span>
+              <span><input type="checkbox" id="toggle-layer-navaids" checked><label
+                      for="toggle-layer-navaids"> Navaids</label> Navaids</span>
             </li>
             <li class="layer-item interactive">
-              <span><input type="checkbox" id="toggle-magvar-overlay" checked> Magnetic Variation</span>
+              <span><input type="checkbox" id="toggle-magvar-overlay" checked><label for="toggle-magvar-overlay"> Magnetic Variation</label></span>
             </li>
           </ul>
         </div>
@@ -87,25 +88,22 @@
   </footer>
   <script src="https://d3js.org/d3.v7.min.js"></script>
 
-  <script type="module">
-    import { setupSvgGlobe } from './js/svg-globe-cambecc.js';
-    // Remove import/initGlobe from globe.js
+<!--  <script type="module">-->
 
-    fetch("MagVar3D_v3/ne_110m_land.geojson")
-            .then(res => res.json())
-            .then(landData => {
-              setupSvgGlobe(
-                      document.getElementById("globe-container"),
-                      landData,
-                      { width: 900, height: 900 }
-              );
-            });
-  </script>
+<!--    fetch("./MagVar3D_v3/ne_110m_land.geojson")-->
+<!--            .then(res => res.json())-->
+<!--            .then(landData => {-->
+<!--              setupSvgGlobe(-->
+<!--                      document.getElementById("globe-container"),-->
+<!--                      landData,-->
+<!--                      { width: 900, height: 900 }-->
+<!--              );-->
+<!--            });-->
+<!--  </script>-->
 
   <script type="module">
     // import { initGlobe } from './js/globe.js';
-    import { loadAllData } from './js/data.js';
-
+    import { setupSvgGlobe } from './js/svg-globe-cambecc.js';
     // Sidebar logic
     const sidebarItems = document.querySelectorAll('.sidebar-item');
     const panels = {
@@ -129,18 +127,13 @@
       });
     });
 
-    // Globe rendering
-    // const globeContainer = document.getElementById('globe-container');
-    // loadAllData().then(() => {
-    //   initGlobe(globeContainer);
-    // });
-    fetch("MagVar3D_v3/ne_110m_land.geojson")
+    fetch("./MagVar3D_v3/ne_110m_land.geojson")
             .then(res => res.json())
             .then(landData => {
               setupSvgGlobe(
                       document.getElementById("globe-container"),
                       landData,
-                      { width: 900, height: 900 } // adjust as needed
+                      { width: 1500, height: 900 } // adjust as needed
               );
             });
   </script>

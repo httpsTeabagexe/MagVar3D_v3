@@ -13,12 +13,9 @@ import {
 let projection, path, graticule, context, width, height, centerX, centerY;
 let landTiles = {}; // { tileId: { geojson, loaded, features } }
 let marker = null;
-let overlayInfo = null;
 let currentScale = config.defaultScale || 280;
-let currentRotation = [0, 0];
-let rafHandle = null;
-let dragging = false;
-let lastPos = null; // Last mouse position for dragging
+
+let rafHandle = null;// Last mouse position for dragging
 
 // Tile load queue management
 let tileQueue = [];
@@ -30,77 +27,11 @@ const MAX_TILE_REQUESTS = 6; // Max concurrent tile loads
 let zoomLevelIdx = ZOOM_LEVELS.findIndex(z => z >= currentScale);
 if (zoomLevelIdx === -1) zoomLevelIdx = ZOOM_LEVELS.length - 1;
 
-// export function initGlobe(container) {
-//     width = container.clientWidth;
-//     height = container.clientHeight;
-//     centerX = width / 2;
-//     centerY = height / 2;
-//
-//     // Main canvas
-//     const canvas = d3.select(container).append("canvas")
-//         .attr("width", width)
-//         .attr("height", height)
-//         .node();
-//     context = canvas.getContext("2d");
-//
-//     // D3 projection and path
-//     projection = d3.geoOrthographic()
-//         .scale(currentScale)
-//         .translate([centerX, centerY])
-//         .rotate(currentRotation)
-//         .clipAngle(90);
-//
-//     path = d3.geoPath(projection, context);
-//     graticule = d3.geoGraticule10();
-//
-//     // Interactions
-//     canvas.addEventListener('mousedown', e => {
-//         lastPos = [e.clientX, e.clientY];
-//         dragging = true;
-//     });
-//     canvas.addEventListener('mouseup', e => {
-//         dragging = false;
-//         if (Math.abs(e.clientX - lastPos[0]) < 4 && Math.abs(e.clientY - lastPos[1]) < 4) {
-//             const [x, y] = [e.offsetX, e.offsetY];
-//             const coords = projection.invert([x, y]);
-//             if (coords) {
-//                 marker = { lon: coords[0], lat: coords[1] };
-//                 overlayInfo = {
-//                     lon: marker.lon,
-//                     lat: marker.lat,
-//                     info: `MagVar: ${getFakeMagVar(marker.lon, marker.lat)}°`
-//                 };
-//                 redraw(true);
-//                 showOverlayInfo(overlayInfo);
-//             }
-//         }
-//     });
-//     window.addEventListener('mousemove', e => {
-//         if (!dragging) return;
-//         const dx = e.clientX - lastPos[0];
-//         const dy = e.clientY - lastPos[1];
-//         lastPos = [e.clientX, e.clientY];
-//         currentRotation[0] += dx * 0.5;
-//         currentRotation[1] = Math.max(-90, Math.min(90, currentRotation[1] - dy * 0.5));
-//         projection.rotate(currentRotation);
-//         requestRedraw();
-//     });
-//     window.addEventListener('mouseup', () => { dragging = false; });
-//
-//     // Zoom with mouse wheel
-//     canvas.addEventListener('wheel', (e) => {
-//         e.preventDefault();
-//         setZoom(currentScale + (e.deltaY < 0 ? 15 : -15));
-//     }, { passive: false });
-//
-//     // Initial tile load & draw
-//     redraw(true);
-// }
 
 function requestRedraw() {
     if (!rafHandle) {
         rafHandle = requestAnimationFrame(() => {
-            redraw(false);
+            redraw();
             rafHandle = null;
         });
     }
@@ -116,7 +47,7 @@ function getLOD() {
 // Return the list of visible tiles for a given tile size (degrees)
 function getVisibleTiles(tileSize, suffix) {
     const tiles = [];
-    const [lambda0, phi0] = projection.rotate();
+
 
     for (let lon = -180; lon < 180; lon += tileSize) {
         for (let lat = -90; lat < 90; lat += tileSize) {
@@ -178,32 +109,7 @@ function loadTile(tile, cb) {
 }
 
 
-function drawLand() {
-    if (!landDataLowRes && !landDataHighRes) return;
-
-    const landData = currentScale > 300 && landDataHighRes ? landDataHighRes : landDataLowRes;
-    if (!landData) return;
-
-    context.save();
-    context.beginPath();
-
-    // Draw land shapes
-    const geoPath = d3.geoPath(projection, context);
-    geoPath(landData);
-
-    context.fillStyle = config.landFillColor || "#3A5F0B";
-    context.fill();
-
-    if (config.landStrokeWidth > 0) {
-        context.strokeStyle = config.landStrokeColor || "#2A4F0A";
-        context.lineWidth = config.landStrokeWidth;
-        context.stroke();
-    }
-
-    context.restore();
-}
-
-export function redraw(force = false) {
+export function redraw() {
     // Always render low-res for full visible globe, render high-res only for visible sector if zoomed in
     const lowLod = LOD_SCALES[0]; // always render 110m under everything
     const highLod = getLOD(); // can be 50m or 10m
@@ -375,8 +281,8 @@ function drawWaypoints(waypoints) {
 
         context.beginPath();
         context.moveTo(x, y - waypointSize / Math.sqrt(3) * 2/3); // Top point of triangle
-        context.lineTo(x - waypointSize / 2, y + waypointSize / Math.sqrt(3) * 1/3);
-        context.lineTo(x + waypointSize / 2, y + waypointSize / Math.sqrt(3) * 1/3);
+        context.lineTo(x - waypointSize / 2, y + waypointSize / Math.sqrt(3)/3);
+        context.lineTo(x + waypointSize / 2, y + waypointSize / Math.sqrt(3)/3);
         context.closePath();
         context.fill();
         if (config.waypointStrokeWidth > 0) {
@@ -434,80 +340,9 @@ function drawMagVarOverlay() {
 
 
 // Fake MagVar value for demo
-function getFakeMagVar(lon, lat) {
-    return (Math.sin(lon / 30) * Math.cos(lat / 30) * 15).toFixed(1);
-}
 
 // Imperative UI API for zoom/rotation
-export function setZoom(scale) {
-    // Snap to nearest zoom level
-    let closest = ZOOM_LEVELS.reduce((prev, curr) =>
-        Math.abs(curr - scale) < Math.abs(prev - scale) ? curr : prev
-    );
-    currentScale = Math.max(ZOOM_LEVELS[0], Math.min(ZOOM_LEVELS[ZOOM_LEVELS.length - 1], closest));
-    zoomLevelIdx = ZOOM_LEVELS.indexOf(currentScale);
-    projection.scale(currentScale);
-    requestRedraw();
-    const slider = document.getElementById('zoom-slider');
-    if (slider) slider.value = currentScale;
-}
 
 // Optional: expose discrete zoom in/out controls
-export function zoomIn() {
-    if (zoomLevelIdx < ZOOM_LEVELS.length - 1) {
-        zoomLevelIdx++;
-        setZoom(ZOOM_LEVELS[zoomLevelIdx]);
-    }
-}
-export function zoomOut() {
-    if (zoomLevelIdx > 0) {
-        zoomLevelIdx--;
-        setZoom(ZOOM_LEVELS[zoomLevelIdx]);
-    }
-}
-export function setRotation([lambda, phi]) {
-    currentRotation = [lambda, phi];
-    projection.rotate(currentRotation);
-    requestRedraw();
-}
-export function getState() {
-    return {
-        scale: currentScale,
-        rotation: currentRotation.slice()
-    };
-}
 
 // --- Overlay Info UI (bottom right) ---
-function showOverlayInfo({ lon, lat, info }) {
-    let el = document.getElementById('overlay-info-box');
-    if (!el) {
-        el = document.createElement('div');
-        el.id = 'overlay-info-box';
-        Object.assign(el.style, {
-            position: 'fixed',
-            right: '2em',
-            bottom: '2em',
-            background: 'rgba(32,32,40,0.96)',
-            color: '#fff',
-            fontFamily: 'Segoe UI, Arial, sans-serif',
-            padding: '1em 1.6em',
-            borderRadius: '12px',
-            boxShadow: '0 4px 18px #0006',
-            minWidth: '220px',
-            zIndex: 999,
-            fontSize: '1.02em'
-        });
-        document.body.appendChild(el);
-    }
-    el.innerHTML = `
-        <div style="font-size:1.12em; margin-bottom:0.4em;">
-            <b>Coordinates:</b> ${lon.toFixed(3)}, ${lat.toFixed(3)}
-        </div>
-        <div>
-            <b>Overlay:</b> ${info}
-        </div>
-        <div style="margin-top:0.5em; color:#bbb; font-size:0.9em;">
-            <i>Click on globe for more info</i>
-        </div>
-    `;
-}

@@ -147,7 +147,7 @@ body {
     font-weight: 600;
     font-size: 13px;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 1px;
 }
 
 .hide-panel-button {
@@ -240,20 +240,6 @@ input[type="range"]::-moz-range-thumb {
 }
 
 /* Button Styling */
-button, .display-mode-btn {
-    background: var(--navigraph-bg-light);
-    color: var(--navigraph-text-primary);
-    border: 1px solid var(--navigraph-border);
-    padding: 0.6em 1em;
-    border-radius: 3px;
-    cursor: pointer;
-    margin-right: 0.5em;
-    margin-bottom: 0.5em;
-    font-size: 11px;
-    font-weight: 500;
-    transition: background-color 0.2s ease, border-color 0.2s ease;
-    white-space: nowrap;
-}
 button.hide-panel-button {
     background: none;
     border: none;
@@ -263,46 +249,15 @@ button.hide-panel-button {
     font-weight: normal;
     color: var(--navigraph-text-secondary);
 }
-button:hover, .display-mode-btn:hover {
-    background: #414752;
-    border-color: #505662;
-}
+
 button.hide-panel-button:hover {
     background: none;
     border: none;
     color: var(--navigraph-text-primary);
 }
 
-.btn-group { display: flex; flex-wrap: wrap; gap: 0.5em; margin-bottom: 0.5em; }
-
-.display-mode-btn.active {
-    background: var(--navigraph-accent);
-    color: #fff;
-    border-color: var(--navigraph-accent);
-}
-.display-mode-btn.active:hover {
-    background: var(--navigraph-accent-darker);
-    border-color: var(--navigraph-accent-darker);
-}
-
 /* Styles for Map Presets/Layers List */
-.preset-list, .layer-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-}
 
-.preset-item, .layer-item, .option-item {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 9px 10px;
-    margin: 0 -10px;
-    border-radius: 3px;
-    cursor: default;
-    transition: background-color 0.15s ease;
-    font-size: 12px;
-}
 .preset-item span, .layer-item span, .option-item span {
     flex-grow: 1;
     margin-right: 10px;
@@ -313,181 +268,21 @@ button.hide-panel-button:hover {
     margin-left: 5px;
 }
 
-.preset-item.interactive, .layer-item.interactive, .option-item.interactive {
-    cursor: pointer;
-}
-.preset-item.interactive:hover, .layer-item.interactive:hover, .option-item.interactive:hover {
-    background-color: var(--navigraph-bg-light);
-}
-
-.preset-item.active {
-    background-color: var(--navigraph-accent);
-    color: #fff;
-}
 .preset-item.active small {
     color: rgba(255,255,255,0.8);
 }
-.preset-item.active .reset-button {
-    opacity: 1;
-    pointer-events: auto;
-}
-.preset-item.active:hover {
-    background-color: var(--navigraph-accent-darker);
-}
-
-.preset-item.sub-item {
-    padding-left: 25px;
-}
-
-.preset-item.divider {
-    font-weight: 600;
-    color: var(--navigraph-text-secondary);
-    margin-top: 0.5em;
-    margin-bottom: 0.2em;
-    cursor: default;
-    background-color: transparent !important;
-    padding-left: 10px;
-}
-
-.reset-button {
-    background-color: var(--navigraph-danger);
-    color: white;
-    border: none;
-    border-radius: 3px;
-    padding: 3px 8px;
-    font-size: 10px;
-    cursor: pointer;
-    opacity: 0;
-    pointer-events: none;
-    transition: background-color 0.15s ease, opacity 0.15s ease;
-    flex-shrink: 0;
-}
-.reset-button:hover {
-    background-color: var(--navigraph-danger-hover);
-}
 
 /* Toggle Switch Styles */
-.switch {
-    position: relative;
-    display: inline-block;
-    width: 34px;
-    height: 20px;
-    flex-shrink: 0;
-}
 .switch input { opacity: 0; width: 0; height: 0; }
-.slider {
-    position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
-    background-color: var(--navigraph-bg-light); transition: .2s;
-}
-.slider:before {
-    position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 3px;
-    background-color: white; transition: .2s;
-}
-input:checked + .slider { background-color: var(--navigraph-accent); }
-input:checked + .slider:before { transform: translateX(14px); }
-.slider.round { border-radius: 20px; }
-.slider.round:before { border-radius: 50%; }
-
-.layer-item .icon-placeholder {
-    font-size: 14px;
-    width: 18px;
-    text-align: center;
-    margin-right: 8px;
-    color: var(--navigraph-text-secondary);
-    flex-shrink: 0;
-}
-
-.subtle-button {
-    background: none; border: none; color: var(--navigraph-accent);
-    padding: 3px 0; font-size: 11px; cursor: pointer; text-align: left;
-}
-.subtle-button:hover { color: var(--navigraph-accent-darker); }
 
 /* Color options */
-.color-option {
-    display: inline-block;
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    margin: 0 5px;
-    cursor: pointer;
-    border: 2px solid transparent;
-    transition: border-color 0.15s ease;
-}
-.color-option:hover {
-    border-color: var(--navigraph-text-secondary);
-}
-.color-option.selected {
-    border-color: var(--navigraph-accent);
-}
 
 /* Overlay Controls Specific Styles */
-.overlay-row {
-    display: flex;
-    align-items: center;
-    margin-bottom: 0.8em;
-    font-size: 12px;
-}
-.overlay-label {
-    width: 80px; /* Adjust as needed */
-    color: var(--navigraph-text-secondary);
-    flex-shrink: 0;
-}
-.overlay-value {
-    flex-grow: 1;
-    display: flex;
-    align-items: center;
-}
-.overlay-selector {
-    width: auto; /* Override default width */
-    flex-grow: 1;
-    margin-bottom: 0;
-}
-#height-level {
-    width: auto;
-    flex-grow: 1;
-    margin: 0 10px 0 0;
-    margin-bottom: 0; /* Override range default */
-}
-#height-value {
-    color: var(--navigraph-text-secondary);
-    min-width: 40px; /* Prevent jumpiness */
-    text-align: right;
-}
-.overlay-value > .display-mode-btn {
-    margin-right: 0.3em; /* Reduce margin between mode buttons */
-    margin-bottom: 0;
-    padding: 0.4em 0.8em;
-    font-size: 10px;
-}
-.overlay-value > .display-mode-btn:first-child {
-    /* margin-left: 0.5em; */ /* Add spacing if needed */
-}
 
 /* Grid Dots */
 .grid-dots circle { fill: rgba(200, 200, 200, 0.25); }
 
 /* Legend */
-.legend {
-    position: absolute;
-    bottom: 10px;
-    right: 15px;
-    background-color: rgba(var(--navigraph-bg-dark-rgb), 0.85); /* Use RGB for opacity */
-    color: var(--navigraph-text-primary);
-    border-radius: 3px;
-    padding: 10px 15px;
-    font-size: 11px;
-    z-index: 100;
-    max-width: 180px;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.3);
-    border: 1px solid var(--navigraph-border);
-    opacity: 0;
-    transition: opacity 0.3s ease;
-    pointer-events: none;
-}
-.legend.visible {
-    opacity: 1;
-}
 .legend h3 {
     margin: 0 0 8px 0;
     padding-bottom: 5px;
@@ -497,45 +292,13 @@ input:checked + .slider:before { transform: translateX(14px); }
     text-transform: uppercase;
     border-bottom: 1px solid var(--navigraph-border);
 }
-.legend-content {
-    display: flex;
-    align-items: center;
-}
-.legend-gradient {
-    width: 10px;
-    height: 100px; /* Adjust as needed */
-    border-radius: 2px;
-    margin-right: 10px;
-}
-.legend-labels {
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    height: 100px; /* Match gradient height */
-    color: var(--navigraph-text-secondary);
-}
+
 .legend-labels span {
     display: block;
     line-height: 1.2;
 }
 
 /* Tooltip */
-#tooltip {
-    position: absolute;
-    background: var(--navigraph-bg-medium);
-    color: var(--navigraph-text-primary);
-    padding: 8px 12px;
-    border-radius: 3px;
-    font-size: 11px;
-    z-index: 1010; /* Above legend */
-    max-width: 200px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.1s ease;
-    border: 1px solid var(--navigraph-border);
-    white-space: nowrap;
-}
 
 /* Top Control Bar - REMOVED RULES */
 /* #top-control-bar, .top-bar-toggle, .top-bar-button related rules removed */
@@ -548,14 +311,11 @@ input:checked + .slider:before { transform: translateX(14px); }
     align-items: center;
     width: 100vw;
     height: 100vh;
-    position: fixed;
     top: 0;
-    left: 0;
     background: #181818;
     z-index: 0;
     position: absolute;
     left: 60px;
-    top: 0;
     right: 0;
     bottom: 0;
     overflow: hidden;
@@ -569,26 +329,7 @@ canvas {
     height: 100%;
 }
 
-#globe-svg {
-    display: block;
-    margin: auto;
-}
-
-#globe {
-    position: absolute;
-    left: 0; top: 0; right: 0; bottom: 0;
-    width: 100vw;
-    height: 100vh;
-    overflow: hidden;
-    z-index: 0;
-}
-body.panel-visible #globe {
-    left: calc(60px + 320px);
-    width: calc(100% - 60px - 320px);
-}
 /* body.top-bar-hidden #globe -- Removed selector */
-
-.earth-viewer { display: block; }
 
 /* Footer */
 footer {
@@ -626,17 +367,10 @@ footer#footer-info a:hover {
 }
 
 /* Marker and Info Window */
-.marker { position: absolute; width: 10px; height: 10px; border-radius: 50%; background: rgba(74, 144, 226, 0.8); border: 1px solid rgba(255, 255, 255, 0.7); transform: translate(-50%, -50%); pointer-events: none; z-index: 990; box-shadow: 0 0 6px rgba(74, 144, 226, 0.6); }
-.info-window { position: absolute; background: var(--navigraph-bg-medium); color: var(--navigraph-text-primary); padding: 12px; border-radius: 3px; font-size: 11px; z-index: 1000; max-width: 200px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4); transform: translate(-50%, -100%); margin-top: -12px; pointer-events: none; border: 1px solid var(--navigraph-border); }
-.info-window::after { content: ''; position: absolute; bottom: -6px; left: 50%; width: 12px; height: 12px; background: var(--navigraph-bg-medium); transform: translateX(-50%) rotate(45deg); z-index: -1; border-right: 1px solid var(--navigraph-border); border-bottom: 1px solid var(--navigraph-border); }
 
 /* Loading Text */
-.loading-text { font-size: 16px; font-weight: 600; fill: var(--navigraph-text-primary); text-anchor: middle; }
 
 /* Remove old overlay styles no longer used */
-.overlay, .status, .location, .data-info, .menu-button, .panel, .overlay-menu, #map-controls-panel {
-    display: none !important;
-}
 
 /* Added style for body.panel-visible for sidebar positioning */
 body.panel-visible #sidebar-content {
@@ -651,6 +385,3 @@ body.panel-visible #sidebar-content {
 }
 
 /* Hide old layouts */
-.settings-layout, .map-view-container {
-    display: none !important;
-}
