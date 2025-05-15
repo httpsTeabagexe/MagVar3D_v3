@@ -51,8 +51,8 @@ export const ZOOM_LEVELS = [
 ]; // Example zoom levels
 
 export const LOD_SCALES = [
-    { max: 340, suffix: '110m', tileSize: 36 }, // Low LOD (coarse, use ne_110m)
-    { max: 9999, suffix: '50m', tileSize: 18 },  // All higher zoom levels use 50m
+    {max: 340, suffix: '110m', tileSize: 36}, // Low LOD (coarse, use ne_110m)
+    {max: 9999, suffix: '50m', tileSize: 18},  // All higher zoom levels use 50m
 ];
 
 // Overlay color scales

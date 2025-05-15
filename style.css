@@ -40,6 +40,7 @@ body {
     user-select: none;
     /* transition: padding-top 0.25s ease-in-out; -- Removed transition */
 }
+
 /* body.top-bar-hidden #left-sidebar -- Removed selector */
 
 
@@ -54,29 +55,35 @@ body {
     border-left: 3px solid transparent;
     margin-left: -1px;
 }
+
 .sidebar-item .icon {
     font-size: 22px;
     margin-bottom: 4px;
     color: var(--navigraph-text-secondary);
     transition: color 0.15s ease;
 }
+
 .sidebar-item .label {
     font-size: 10px;
     text-transform: uppercase;
     color: var(--navigraph-text-secondary);
     transition: color 0.15s ease;
 }
+
 .sidebar-item:hover {
     background-color: var(--navigraph-bg-light);
 }
+
 .sidebar-item:hover .icon,
 .sidebar-item:hover .label {
     color: var(--navigraph-text-primary);
 }
+
 .sidebar-item.active {
     background-color: var(--navigraph-accent);
     border-left: 3px solid var(--navigraph-text-primary);
 }
+
 .sidebar-item.active .icon,
 .sidebar-item.active .label {
     color: #fff;
@@ -96,6 +103,7 @@ body {
     transition: left 0.25s ease-in-out, width 0.25s ease-in-out, opacity 0.25s ease-in-out, transform 0.25s ease-in-out; /* Keep panel slide transition */
     /* transition: top 0.25s ease-in-out, height 0.25s ease-in-out, left 0.25s ease-in-out, width 0.25s ease-in-out; -- Removed transition */
 }
+
 /* body.top-bar-hidden #sidebar-content -- Removed selector */
 
 .sidebar-content-panel {
@@ -120,9 +128,19 @@ body {
     padding: 18px;
     flex-grow: 1;
     overflow-y: auto;
-    &::-webkit-scrollbar { width: 6px; }
-    &::-webkit-scrollbar-track { background: var(--navigraph-bg-medium); }
-    &::-webkit-scrollbar-thumb { background-color: var(--navigraph-bg-light); border-radius: 3px; }
+
+    &::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    &::-webkit-scrollbar-track {
+        background: var(--navigraph-bg-medium);
+    }
+
+    &::-webkit-scrollbar-thumb {
+        background-color: var(--navigraph-bg-light);
+        border-radius: 3px;
+    }
 }
 
 .sidebar-content-panel.visible {
@@ -139,6 +157,7 @@ body {
     border-bottom: 1px solid var(--navigraph-border);
     flex-shrink: 0;
 }
+
 .panel-header h3 {
     margin: 0;
     border-bottom: none;
@@ -162,13 +181,16 @@ body {
     opacity: 0.7;
     transition: color 0.15s ease, opacity 0.15s ease;
 }
+
 .hide-panel-button:hover {
     color: var(--navigraph-text-primary);
     opacity: 1;
 }
 
 /* Panel Content Styling */
-.menu-section { margin-bottom: 2em; }
+.menu-section {
+    margin-bottom: 2em;
+}
 
 .menu-section h4 {
     font-size: 11px;
@@ -187,6 +209,7 @@ body {
     font-size: 12px;
     color: var(--navigraph-text-primary);
 }
+
 .menu-section label input[type="checkbox"] {
     margin-right: 0.8em;
     cursor: pointer;
@@ -207,6 +230,7 @@ input[type="text"], select {
     box-sizing: border-box;
     outline: none;
 }
+
 input[type="text"]:focus, select:focus {
     border-color: var(--navigraph-accent);
 }
@@ -221,6 +245,7 @@ input[type="range"] {
     cursor: pointer;
     margin-bottom: 0.8em;
 }
+
 input[type="range"]::-webkit-slider-thumb {
     appearance: none;
     width: 14px;
@@ -230,6 +255,7 @@ input[type="range"]::-webkit-slider-thumb {
     cursor: pointer;
     border: 2px solid var(--navigraph-bg-medium);
 }
+
 input[type="range"]::-moz-range-thumb {
     width: 14px;
     height: 14px;
@@ -262,6 +288,7 @@ button.hide-panel-button:hover {
     flex-grow: 1;
     margin-right: 10px;
 }
+
 .preset-item small, .layer-item small {
     opacity: 0.7;
     font-size: 0.9em;
@@ -269,18 +296,24 @@ button.hide-panel-button:hover {
 }
 
 .preset-item.active small {
-    color: rgba(255,255,255,0.8);
+    color: rgba(255, 255, 255, 0.8);
 }
 
 /* Toggle Switch Styles */
-.switch input { opacity: 0; width: 0; height: 0; }
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
 
 /* Color options */
 
 /* Overlay Controls Specific Styles */
 
 /* Grid Dots */
-.grid-dots circle { fill: rgba(200, 200, 200, 0.25); }
+.grid-dots circle {
+    fill: rgba(200, 200, 200, 0.25);
+}
 
 /* Legend */
 .legend h3 {
@@ -320,9 +353,11 @@ button.hide-panel-button:hover {
     bottom: 0;
     overflow: hidden;
 }
+
 body.panel-visible #globe-container {
     left: 380px; /* 60px sidebar + 320px panel */
 }
+
 canvas {
     display: block;
     width: 100%;
@@ -343,13 +378,17 @@ footer {
     border-radius: 3px;
     z-index: 100;
 }
-#footer-info { display: block; }
+
+#footer-info {
+    display: block;
+}
+
 footer#footer-info {
     position: fixed;
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(24,24,24,0.97);
+    background: rgba(24, 24, 24, 0.97);
     color: #aaa;
     font-size: 12px;
     padding: 8px 24px;
@@ -357,20 +396,16 @@ footer#footer-info {
     text-align: right;
     border-top: 1px solid #232323;
 }
+
 footer#footer-info a {
     color: #bbb;
     text-decoration: none;
     margin-left: 18px;
 }
+
 footer#footer-info a:hover {
     text-decoration: underline;
 }
-
-/* Marker and Info Window */
-
-/* Loading Text */
-
-/* Remove old overlay styles no longer used */
 
 /* Added style for body.panel-visible for sidebar positioning */
 body.panel-visible #sidebar-content {
@@ -383,5 +418,3 @@ body.panel-visible #sidebar-content {
     padding-top: 5px; /* Consistent padding */
     transition: none; /* Remove transitions related to top bar */
 }
-
-/* Hide old layouts */
