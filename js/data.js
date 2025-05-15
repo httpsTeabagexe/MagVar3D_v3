@@ -1,6 +1,6 @@
-import { config } from './config.js';
+import {config} from './config.js';
 
-    // Data availability flags
+// Data availability flags
     export const dataAvailable = {
         landLowRes: false,
         landHighRes: false,

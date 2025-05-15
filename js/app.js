@@ -1,8 +1,8 @@
-import { setupSvgGlobe } from "./svg-globe-cambecc.js";
-            import { loadAllData } from './data.js';
-            import { config } from './config.js';
+import {setupSvgGlobe} from "./svg-globe-cambecc.js";
+import {loadAllData} from './data.js';
+import {config} from './config.js';
 
-            let svg, globeGroup, loadingText;
+let svg, globeGroup, loadingText;
 
             function getSidebarWidth() {
                 return document.getElementById('left-sidebar')?.offsetWidth || 0;
