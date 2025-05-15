@@ -7,12 +7,6 @@ const lightTheme = {
     graticuleColor: '#888',
 };
 
-// Animation and timing constants
-
-
-
-
-
 export const config = {
     landDataUrlLowRes: './MagVar3D_v3/ne_110m_land.geojson', // Adjust as needed
     landDataUrlHighRes: './MagVar3D_v3/ne_50m_land.geojson',
@@ -41,7 +35,8 @@ export const config = {
     overlayOpacity: 0.7, // Added overlay opacity
     themes: {
         light: lightTheme
-    }
+    },
+    waypointStrokeWidth: 0.8
 };
 
 // WGS84 reference ellipsoid constants

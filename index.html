@@ -1,141 +1,102 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>EarthVie</title>
-  <link rel="stylesheet" href="style.css">
-</head>
-<body>
-  <!-- Modern Sidebar -->
-  <div id="left-sidebar">
-    <div class="sidebar-item active" data-panel="layers">
-      <span class="icon">🗺️</span>
-      <span class="label">Layers</span>
-    </div>
-    <div class="sidebar-item" data-panel="settings">
-      <span class="icon">⚙️</span>
-      <span class="label">Settings</span>
-    </div>
-    <div class="sidebar-item" data-panel="about">
-      <span class="icon">ℹ️</span>
-      <span class="label">About</span>
-    </div>
-  </div>
-  <div id="sidebar-content">
-    <div class="sidebar-content-panel visible" id="panel-layers">
-      <div class="panel-header">
-        <h3>Layers</h3>
-        <button class="hide-panel-button" title="Hide">&times;</button>
-      </div>
-      <div class="panel-inner-content">
-        <div class="menu-section">
-          <h4>Map Layers</h4>
-          <ul class="layer-list">
-            <li class="layer-item interactive">
-              <span><input type="checkbox" id="toggle-layer-airports" checked><label for="toggle-layer-airports"> Airports</label></span>
-            </li>
-            <li class="layer-item interactive">
-              <span><input type="checkbox" id="toggle-layer-waypoints" checked><label for="toggle-layer-waypoints"> Waypoints</label></span>
-            </li>
-            <li class="layer-item interactive">
-              <span><input type="checkbox" id="toggle-layer-navaids" checked><label
-                      for="toggle-layer-navaids"> Navaids</label> Navaids</span>
-            </li>
-            <li class="layer-item interactive">
-              <span><input type="checkbox" id="toggle-magvar-overlay" checked><label for="toggle-magvar-overlay"> Magnetic Variation</label></span>
-            </li>
-          </ul>
-        </div>
-      </div>
-    </div>
-    <div class="sidebar-content-panel" id="panel-settings">
-      <div class="panel-header">
-        <h3>Settings</h3>
-        <button class="hide-panel-button" title="Hide">&times;</button>
-      </div>
-      <div class="panel-inner-content">
-        <div class="menu-section">
-          <h4>Display</h4>
-          <label><input type="checkbox" id="enable-dark-mode" checked> Dark Mode</label>
-          <label><input type="checkbox" id="enable-high-contrast"> High Contrast</label>
-        </div>
-        <div class="menu-section">
-          <h4>Preferences</h4>
-          <label><input type="checkbox" id="show-capitals" checked> Show Capitals</label>
-        </div>
-      </div>
-    </div>
-    <div class="sidebar-content-panel" id="panel-about">
-      <div class="panel-header">
-        <h3>About</h3>
-        <button class="hide-panel-button" title="Hide">&times;</button>
-      </div>
-      <div class="panel-inner-content">
-        <div class="menu-section">
-          <h4>EarthVie Globe</h4>
-          <p>Modern interactive globe visualization.<br>
-          Data source: <span id="data-source-info">N/A</span><br>
-          Timestamp: <span id="data-source-timestamp">N/A</span></p>
-        </div>
-      </div>
-    </div>
-  </div>
-  <!-- Globe Container -->
-  <div id="globe-container"></div>
-  <footer id="footer-info">
-    &copy; 2023 EarthVie &mdash; <a href="#">Support</a> &middot; <a href="#">Terms</a> &middot; <a href="#">Privacy</a>
-  </footer>
-  <script src="https://d3js.org/d3.v7.min.js"></script>
+        <html lang="en">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>EarthVie</title>
+          <link rel="stylesheet" href="style.css">
+        </head>
+        <body>
+          <div id="left-sidebar">
+            <div class="sidebar-item active" data-panel="layers">
+              <span class="icon">🗺️</span><span class="label">Layers</span>
+            </div>
+            <div class="sidebar-item" data-panel="settings">
+              <span class="icon">⚙️</span><span class="label">Settings</span>
+            </div>
+            <div class="sidebar-item" data-panel="about">
+              <span class="icon">ℹ️</span><span class="label">About</span>
+            </div>
+          </div>
+          <div id="sidebar-content">
+            <div class="sidebar-content-panel visible" id="panel-layers">
+              <div class="panel-header">
+                <h3>Layers</h3>
+                <button class="hide-panel-button">&times;</button>
+              </div>
+              <div class="panel-inner-content">
+                <h4>Map Layers</h4>
+                <ul class="layer-list">
+                  <li><input type="checkbox" id="toggle-layer-airports" checked><label for="toggle-layer-airports">Airports</label></li>
+                  <li><input type="checkbox" id="toggle-layer-waypoints" checked><label for="toggle-layer-waypoints">Waypoints</label></li>
+                  <li><input type="checkbox" id="toggle-layer-navaids" checked><label for="toggle-layer-navaids">Navaids</label></li>
+                  <li><input type="checkbox" id="toggle-magvar-overlay" checked><label for="toggle-magvar-overlay">Magnetic Variation</label></li>
+                </ul>
+              </div>
+            </div>
+            <div class="sidebar-content-panel" id="panel-settings">
+              <div class="panel-header">
+                <h3>Settings</h3>
+                <button class="hide-panel-button">&times;</button>
+              </div>
+              <div class="panel-inner-content">
+                <h4>Display</h4>
+                <label><input type="checkbox" id="enable-dark-mode" checked>Dark Mode</label>
+                <label><input type="checkbox" id="enable-high-contrast">High Contrast</label>
+                <h4>Preferences</h4>
+                <label><input type="checkbox" id="show-capitals" checked>Show Capitals</label>
+              </div>
+            </div>
+            <div class="sidebar-content-panel" id="panel-about">
+              <div class="panel-header">
+                <h3>About</h3>
+                <button class="hide-panel-button">&times;</button>
+              </div>
+              <div class="panel-inner-content">
+                <h4>EarthVie Globe</h4>
+                <p>Modern interactive globe visualization.<br>
+                Data source: <span id="data-source-info">N/A</span><br>
+                Timestamp: <span id="data-source-timestamp">N/A</span></p>
+              </div>
+            </div>
+          </div>
+          <div id="globe-container"></div>
+<!--          <footer id="footer-info">-->
+<!--            &copy; 2023 EarthVie &mdash; <a href="#">Support</a> &middot; <a href="#">Terms</a> &middot; <a href="#">Privacy</a>-->
+<!--          </footer>-->
+          <script src="https://d3js.org/d3.v7.min.js"></script>
+          <script type="module">
+            import { setupSvgGlobe } from './js/svg-globe-cambecc.js';
 
-<!--  <script type="module">-->
+            const sidebarItems = document.querySelectorAll('.sidebar-item');
+            const panels = {
+              layers: document.getElementById('panel-layers'),
+              settings: document.getElementById('panel-settings'),
+              about: document.getElementById('panel-about')
+            };
 
-<!--    fetch("./MagVar3D_v3/ne_110m_land.geojson")-->
-<!--            .then(res => res.json())-->
-<!--            .then(landData => {-->
-<!--              setupSvgGlobe(-->
-<!--                      document.getElementById("globe-container"),-->
-<!--                      landData,-->
-<!--                      { width: 900, height: 900 }-->
-<!--              );-->
-<!--            });-->
-<!--  </script>-->
-
-  <script type="module">
-    // import { initGlobe } from './js/globe.js';
-    import { setupSvgGlobe } from './js/svg-globe-cambecc.js';
-    // Sidebar logic
-    const sidebarItems = document.querySelectorAll('.sidebar-item');
-    const panels = {
-      layers: document.getElementById('panel-layers'),
-      settings: document.getElementById('panel-settings'),
-      about: document.getElementById('panel-about')
-    };
-    sidebarItems.forEach(item => {
-      item.addEventListener('click', () => {
-        document.querySelector('.sidebar-item.active').classList.remove('active');
-        item.classList.add('active');
-        Object.values(panels).forEach(p => p.classList.remove('visible'));
-        panels[item.dataset.panel].classList.add('visible');
-        document.body.classList.add('panel-visible');
-      });
-    });
-    document.querySelectorAll('.hide-panel-button').forEach(btn => {
-      btn.addEventListener('click', () => {
-        Object.values(panels).forEach(p => p.classList.remove('visible'));
-        document.body.classList.remove('panel-visible');
-      });
-    });
-
-    fetch("./MagVar3D_v3/ne_110m_land.geojson")
-            .then(res => res.json())
-            .then(landData => {
-              setupSvgGlobe(
-                      document.getElementById("globe-container"),
-                      landData,
-                      { width: 1500, height: 900 } // adjust as needed
-              );
+            sidebarItems.forEach(item => {
+              item.addEventListener('click', () => {
+                document.querySelector('.sidebar-item.active')?.classList.remove('active');
+                item.classList.add('active');
+                Object.values(panels).forEach(p => p.classList.remove('visible'));
+                panels[item.dataset.panel]?.classList.add('visible');
+                document.body.classList.add('panel-visible');
+              });
             });
-  </script>
-</body>
-</html>
+
+            document.querySelectorAll('.hide-panel-button').forEach(btn => {
+              btn.addEventListener('click', () => {
+                Object.values(panels).forEach(p => p.classList.remove('visible'));
+                document.body.classList.remove('panel-visible');
+              });
+            });
+
+            fetch("./MagVar3D_v3/ne_110m_land.geojson")
+              .then(res => res.json())
+              .then(landData => {
+                setupSvgGlobe(document.getElementById("globe-container"), landData, { width: 1500, height: 900 });
+              });
+          </script>
+        </body>
+        </html>
