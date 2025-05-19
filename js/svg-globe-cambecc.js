@@ -120,7 +120,12 @@ export function setupSvgGlobe(container, landGeoJson, options = {}) {
                 isDragging = false;
             })
     );
-
+    // Inside setupSvgGlobe function, before returning
+    container.__globeWrapper = {
+        svg: svg,
+        projection: projection,
+        path: path
+    };
     return {
         svg: svg,
         projection: projection,
