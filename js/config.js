@@ -1,10 +1,10 @@
 // js/config.js
 
 const lightTheme = {
-    landColor: '#72B092',
+    landColor: '#61bf6e',
     oceanColor: '#001D3D',
-    landStrokeColor: '#333',
-    graticuleColor: '#888',
+    landStrokeColor: '#ff0000',
+    graticuleColor: '#ffffff',
 };
 
 export const config = {
@@ -36,23 +36,7 @@ export const config = {
     themes: {
         light: lightTheme
     },
-    waypointStrokeWidth: 0.8
+    waypointStrokeWidth: 0.8,
+    useMagnetismLibrary: true
+
 };
-
-// WGS84 reference ellipsoid constants
-export const WGS84 = {
-    radius: 6378137, // Earth radius in meters
-    a: 6378137, // Semi-major axis
-    e2: 0.00669438 // First eccentricity squared
-};
-
-export const ZOOM_LEVELS = [
-    100, 150, 200, 250, 280, 320, 360, 400, 450, 500, 550, 600, 650
-]; // Example zoom levels
-
-export const LOD_SCALES = [
-    {max: 340, suffix: '110m', tileSize: 36}, // Low LOD (coarse, use ne_110m)
-    {max: 9999, suffix: '50m', tileSize: 18},  // All higher zoom levels use 50m
-];
-
-// Overlay color scales

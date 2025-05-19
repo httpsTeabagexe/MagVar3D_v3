@@ -1,6 +1,24 @@
 import * as d3 from "d3";
+import {
+    createMagvarOverlay,
+    toggleMagvarOverlay,
+    renderMagvarOverlay as updateMagvarOverlay,
+    setMagvarResolution
+} from './magvar-canvas-overlay.js';
+
+function coordsAtPoint(x, y, projection) {
+    // Convert screen coordinates back to geographic coordinates
+    const p = projection.invert([x, y]);
+    if (p) {
+        return p; // Returns [lon, lat]
+    }
+    return null;
+}
 
 export function setupSvgGlobe(container, landGeoJson, options = {}) {
+    let magvarOverlayVisible = false;
+    let isDragging = false, lastMouse = null, lastRotate;
+
     const {
         width = 800,
         height = 800,
@@ -18,6 +36,7 @@ export function setupSvgGlobe(container, landGeoJson, options = {}) {
         .translate([width / 2, height / 2])
         .clipAngle(90);
 
+    lastRotate = projection.rotate();
     const path = d3.geoPath(projection);
 
     const svg = d3.select(container)
@@ -50,8 +69,30 @@ export function setupSvgGlobe(container, landGeoJson, options = {}) {
         .attr("stroke", landStrokeColor)
         .attr("stroke-width", 0.7);
 
-    let isDragging = false, lastMouse = null, lastRotate = projection.rotate();
+    // Function to update geographic paths
+    function updateGeographicPaths() {
+        svg.selectAll(".sphere, .graticule, .land").attr("d", path);
+    }
 
+    // Remove the current zoom and drag behaviors
+    svg.call(
+        d3.zoom()
+            .scaleExtent([width / 4, width * 2])
+            .filter(event => {
+                // Only handle wheel events for zooming, not mouse movements
+                return event.type === 'wheel' || event.type === 'mousewheel';
+            })
+            .on("zoom", (event) => {
+                projection.scale(event.transform.k);
+                updateGeographicPaths();
+
+                if (magvarOverlayVisible) {
+                    updateMagvarOverlay();
+                }
+            })
+    );
+
+    // Set up drag behavior for rotation
     svg.call(
         d3.drag()
             .on("start", (event) => {
@@ -66,21 +107,36 @@ export function setupSvgGlobe(container, landGeoJson, options = {}) {
                 rotation[0] += dx * 0.5;
                 rotation[1] = Math.max(-90, Math.min(90, rotation[1] - dy * 0.5));
                 projection.rotate(rotation);
-                svg.selectAll("path").attr("d", path);
+
+                // Update all path elements
+                updateGeographicPaths();
+
+                // Update magvar overlay when dragging if visible
+                if (magvarOverlayVisible) {
+                    updateMagvarOverlay();
+                }
             })
             .on("end", () => {
                 isDragging = false;
             })
     );
 
-    svg.call(
-        d3.zoom()
-            .scaleExtent([width / 4, width * 2])
-            .on("zoom", (event) => {
-                projection.scale(event.transform.k);
-                svg.selectAll("path").attr("d", path);
-            })
-    );
-
-    return svg;
+    return {
+        svg: svg,
+        projection: projection,
+        path: path,
+        createMagvarOverlay: function() {
+            return createMagvarOverlay(container, projection);
+        },
+        toggleMagvarOverlay: function(visible) {
+            magvarOverlayVisible = visible;
+            toggleMagvarOverlay(visible);
+        },
+        updateMagvarOverlay: function() {
+            updateMagvarOverlay();
+        },
+        setMagvarResolution: function(resolution) {
+            setMagvarResolution(resolution);
+        }
+    };
 }

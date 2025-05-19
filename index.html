@@ -36,6 +36,11 @@
                 <li><input checked id="toggle-magvar-overlay" type="checkbox"><label for="toggle-magvar-overlay">Magnetic
                     Variation</label></li>
             </ul>
+            <div class="control-group">
+                <label for="magvar-resolution">Magnetic Variation Resolution:</label>
+                <input type="range" id="magvar-resolution" min="5" max="30" value="15" step="5">
+                <span class="resolution-value">15°</span>
+            </div>
         </div>
     </div>
     <div class="sidebar-content-panel" id="panel-settings">
@@ -57,7 +62,7 @@
             <button class="hide-panel-button">&times;</button>
         </div>
         <div class="panel-inner-content">
-            <h4>EarthVie Globe</h4>
+            <h4>EarthView Globe</h4>
             <p>Modern interactive globe visualization.<br>
                 Data source: <span id="data-source-info">N/A</span><br>
                 Timestamp: <span id="data-source-timestamp">N/A</span></p>

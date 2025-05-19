@@ -418,3 +418,23 @@ body.panel-visible #sidebar-content {
     padding-top: 5px; /* Consistent padding */
     transition: none; /* Remove transitions related to top bar */
 }
+
+.position-info {
+    margin-top: 15px;
+    padding: 10px;
+    background-color: rgba(0,0,0,0.1);
+    border-radius: 5px;
+}
+
+.info-display {
+    margin-bottom: 10px;
+}
+
+.position-marker circle:hover {
+    cursor: pointer;
+    fill: orange;
+}
+
+#magvar-year {
+    width: 80px;
+}
