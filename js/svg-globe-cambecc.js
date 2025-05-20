@@ -2,23 +2,11 @@ import * as d3 from "d3";
 import {
     createMagvarOverlay,
     toggleMagvarOverlay,
-    renderMagvarOverlay as updateMagvarOverlay,
+    updateMagvarOverlay,
     setMagvarResolution
 } from './magvar-canvas-overlay.js';
 
-function coordsAtPoint(x, y, projection) {
-    // Convert screen coordinates back to geographic coordinates
-    const p = projection.invert([x, y]);
-    if (p) {
-        return p; // Returns [lon, lat]
-    }
-    return null;
-}
-
 export function setupSvgGlobe(container, landGeoJson, options = {}) {
-    let magvarOverlayVisible = false;
-    let isDragging = false, lastMouse = null, lastRotate;
-
     const {
         width = 800,
         height = 800,
@@ -29,16 +17,18 @@ export function setupSvgGlobe(container, landGeoJson, options = {}) {
         graticuleOpacity = 0.7
     } = options;
 
+    // Remove any existing SVG
     d3.select(container).select("svg").remove();
 
+    // Create projection and path
     const projection = d3.geoOrthographic()
         .scale(Math.min(width, height) / 2.1)
         .translate([width / 2, height / 2])
         .clipAngle(90);
 
-    lastRotate = projection.rotate();
     const path = d3.geoPath(projection);
 
+    // Create SVG and append base layers
     const svg = d3.select(container)
         .append("svg")
         .attr("width", width)
@@ -46,12 +36,14 @@ export function setupSvgGlobe(container, landGeoJson, options = {}) {
         .attr("viewBox", `0 0 ${width} ${height}`)
         .attr("class", "earth-svg-cambecc");
 
+    // Add sphere (ocean)
     svg.append("path")
-        .datum({type: "Sphere"})
+        .datum({ type: "Sphere" })
         .attr("class", "sphere")
         .attr("d", path)
         .attr("fill", oceanColor);
 
+    // Add graticule (grid lines)
     svg.append("path")
         .datum(d3.geoGraticule10())
         .attr("class", "graticule")
@@ -61,6 +53,7 @@ export function setupSvgGlobe(container, landGeoJson, options = {}) {
         .attr("stroke-width", 1)
         .attr("opacity", graticuleOpacity);
 
+    // Add land masses
     svg.append("path")
         .datum(landGeoJson)
         .attr("class", "land")
@@ -69,79 +62,56 @@ export function setupSvgGlobe(container, landGeoJson, options = {}) {
         .attr("stroke", landStrokeColor)
         .attr("stroke-width", 0.7);
 
-    // Function to update geographic paths
+    // Helper function to update paths when projection changes
     function updateGeographicPaths() {
         svg.selectAll(".sphere, .graticule, .land").attr("d", path);
     }
 
-    // Remove the current zoom and drag behaviors
+    // Add zoom behavior
     svg.call(
         d3.zoom()
             .scaleExtent([width / 4, width * 2])
-            .filter(event => {
-                // Only handle wheel events for zooming, not mouse movements
-                return event.type === 'wheel' || event.type === 'mousewheel';
-            })
-            .on("zoom", (event) => {
+            .filter(event => event.type === 'wheel')
+            .on("zoom", event => {
                 projection.scale(event.transform.k);
                 updateGeographicPaths();
-
-                if (magvarOverlayVisible) {
-                    updateMagvarOverlay();
-                }
+                updateMagvarOverlay();
             })
     );
 
-    // Set up drag behavior for rotation
+    // Add drag behavior
     svg.call(
         d3.drag()
-            .on("start", (event) => {
-                isDragging = true;
-                lastMouse = [event.x, event.y];
-                lastRotate = projection.rotate();
+            .on("start", event => {
+                container.__dragStartPos = [event.x, event.y];
+                container.__dragStartRotate = projection.rotate();
             })
-            .on("drag", (event) => {
-                if (!isDragging) return;
-                const [dx, dy] = [event.x - lastMouse[0], event.y - lastMouse[1]];
-                const rotation = [...lastRotate];
+            .on("drag", event => {
+                const dx = event.x - container.__dragStartPos[0];
+                const dy = event.y - container.__dragStartPos[1];
+                const rotation = [...container.__dragStartRotate];
+
                 rotation[0] += dx * 0.5;
                 rotation[1] = Math.max(-90, Math.min(90, rotation[1] - dy * 0.5));
+
                 projection.rotate(rotation);
-
-                // Update all path elements
                 updateGeographicPaths();
-
-                // Update magvar overlay when dragging if visible
-                if (magvarOverlayVisible) {
-                    updateMagvarOverlay();
-                }
-            })
-            .on("end", () => {
-                isDragging = false;
+                updateMagvarOverlay();
             })
     );
-    // Inside setupSvgGlobe function, before returning
+
+    // Create globe wrapper with API for external use
     container.__globeWrapper = {
-        svg: svg,
-        projection: projection,
-        path: path
+        svg,
+        projection,
+        path,
+        createMagvarOverlay: () => createMagvarOverlay(container, projection),
+        toggleMagvarOverlay: visible => toggleMagvarOverlay(visible),
+        setMagvarResolution: resolution => setMagvarResolution(resolution)
     };
-    return {
-        svg: svg,
-        projection: projection,
-        path: path,
-        createMagvarOverlay: function() {
-            return createMagvarOverlay(container, projection);
-        },
-        toggleMagvarOverlay: function(visible) {
-            magvarOverlayVisible = visible;
-            toggleMagvarOverlay(visible);
-        },
-        updateMagvarOverlay: function() {
-            updateMagvarOverlay();
-        },
-        setMagvarResolution: function(resolution) {
-            setMagvarResolution(resolution);
-        }
-    };
+
+    // Initialize magnetic variation overlay
+    container.__globeWrapper.createMagvarOverlay();
+
+    return container.__globeWrapper;
 }

@@ -1,5 +1,5 @@
 import { setupSvgGlobe } from "./svg-globe-cambecc.js";
-import { loadAllData, dataAvailable } from './data.js';
+import { loadAllData, dataAvailable, placeholderAirports, placeholderWaypoints, placeholderNavaids } from './data.js';
 import { config } from './config.js';
 import {
     createMagvarOverlay,
@@ -9,160 +9,134 @@ import {
     updateMagvarOverlay
 } from './magvar-canvas-overlay.js';
 import geomagnetism from 'geomagnetism';
-// Store the globe wrapper for accessing its methods
-let globe;
-let loadingText;
-let magvarData = null;
 
-// Initialize the application
+let globe, loadingText, magvarData = null;
+const visibleLayers = { airports: true, waypoints: true, navaids: true };
+
+function renderNavigationData() {
+    if (!globe?.svg || !globe.projection) return;
+    globe.svg.selectAll(".nav-point").remove();
+    if (visibleLayers.airports) renderAirports();
+    if (visibleLayers.navaids) renderNavaids();
+    if (visibleLayers.waypoints) renderWaypoints();
+}
+
+function renderAirports() {
+    if (!globe?.svg || !globe.projection) return;
+    const airportPoints = globe.svg.selectAll(".airport")
+        .data(placeholderAirports)
+        .enter()
+        .append("g")
+        .attr("class", "nav-point airport")
+        .attr("transform", d => {
+            const pos = globe.projection([d.lon, d.lat]);
+            return pos ? `translate(${pos[0]}, ${pos[1]})` : "translate(-1000,-1000)";
+        });
+    airportPoints.append("circle").attr("r", 3).attr("fill", "#3498db").attr("stroke", "#fff").attr("stroke-width", 0.5);
+}
+
+function renderNavaids() {
+    if (!globe?.svg || !globe.projection) return;
+    const navaidPoints = globe.svg.selectAll(".navaid")
+        .data(placeholderNavaids)
+        .enter()
+        .append("g")
+        .attr("class", "nav-point navaid")
+        .attr("transform", d => {
+            const pos = globe.projection([d.lon, d.lat]);
+            return pos ? `translate(${pos[0]}, ${pos[1]})` : "translate(-1000,-1000)";
+        });
+    navaidPoints.append("path")
+        .attr("d", d => d.type === "VOR" ? "M-3,0 L3,0 M0,-3 L0,3 M-2.1,-2.1 L2.1,2.1 M-2.1,2.1 L2.1,-2.1" : "M0,0 m-3,0 a3,3 0 1,0 6,0 a3,3 0 1,0 -6,0")
+        .attr("stroke", d => d.type === "VOR" ? "#e74c3c" : "#f39c12")
+        .attr("stroke-width", 1.2)
+        .attr("fill", d => d.type === "VOR" ? "none" : "rgba(243, 156, 18, 0.3)");
+}
+
+function renderWaypoints() {
+    if (!globe?.svg || !globe.projection) return;
+    const waypointPoints = globe.svg.selectAll(".waypoint")
+        .data(placeholderWaypoints)
+        .enter()
+        .append("g")
+        .attr("class", "nav-point waypoint")
+        .attr("transform", d => {
+            const pos = globe.projection([d.lon, d.lat]);
+            return pos ? `translate(${pos[0]}, ${pos[1]})` : "translate(-1000,-1000)";
+        });
+    waypointPoints.append("path").attr("d", "M0,-3 L2.5,2 L-2.5,2 Z").attr("fill", "#2ecc71").attr("opacity", 0.8);
+}
+
 async function initApp() {
     const globeContainer = document.getElementById("globe-container");
     config.width = window.innerWidth - getSidebarWidth();
     config.height = window.innerHeight;
-
     showLoadingMessage("Loading geographic data...");
-
     try {
-        // Load land data first
         const landData = await loadAllData();
-
         hideLoadingMessage();
-
-        if (!landData) {
-            showLoadingMessage("Failed to load land data.", true);
-            return;
-        }
-
-        // Setup the globe with the land data
-        globe = setupSvgGlobe(
-            globeContainer,
-            landData,
-            {
-                width: config.width || 900,
-                height: config.height || 900,
-                landColor: config.landColor || "#72B092",
-                oceanColor: config.oceanColor || "#001D3D",
-                landStrokeColor: config.landStrokeColor || "#333",
-                graticuleColor: config.graticuleColor || "#888",
-                graticuleOpacity: config.graticuleOpacity ?? 0.7
-            }
-        );
-
-        // Load magnetic variation data
+        if (!landData) return showLoadingMessage("Failed to load land data.", true);
+        globe = setupSvgGlobe(globeContainer, landData, {
+            width: config.width || 900,
+            height: config.height || 900,
+            landColor: config.landColor || "#72B092",
+            oceanColor: config.oceanColor || "#001D3D",
+            landStrokeColor: config.landStrokeColor || "#333",
+            graticuleColor: config.graticuleColor || "#888",
+            graticuleOpacity: config.graticuleOpacity ?? 0.7
+        });
         await loadMagneticVariationData(globeContainer);
-
-        // Setup event listeners for UI controls
         setupUIControls();
         setupResizeHandler();
         setupRotationHandler();
-
+        renderNavigationData();
+        updateMagvarOverlay();
     } catch (error) {
         console.error("Error initializing application:", error);
         showLoadingMessage("Failed to initialize application.", true);
     }
 }
-// Check if geomagnetism is loaded
-function checkGeomagnLibrary() {
-    console.log("Checking geomagnetism library availability...");
-
-    // Case 1: Library loaded via script tag (attaches to window.geomag)
-    if (typeof window.geomag !== 'undefined') {
-        console.log("Found global geomag, creating factory function");
-        window.geoMagFactory = window.geomag.model;
-        return true;
-    }
-
-    // Case 2: Library loaded via npm (import)
-    try {
-        // Check if geomagnetism was imported elsewhere
-        if (typeof geomagnetism !== 'undefined') {
-            console.log("Found imported geomagnetism module");
-            window.geoMagFactory = geomagnetism.model;
-            return true;
-        }
-    } catch (e) {
-        // Variable not defined in this scope
-    }
-
-    console.warn("Geomagnetism library not found. Ensure it's properly imported.");
-    return false;
-}
 
 async function loadMagneticVariationData(container) {
-    // Call this at the start of loadMagneticVariationData
     checkGeomagnLibrary();
     try {
         showLoadingMessage("Loading magnetic variation data...");
-
-        // For geomagnetism library, you can either:
-        // 1. Use their built-in coefficients
         if (window.geoMagFactory) {
-            magvarData = {}; // The library has built-in coefficients
+            magvarData = {};
             dataAvailable.magvar = true;
         } else {
-            // 2. Load your own WMM coefficients
-            const response = await fetch('data/WMM.COF');
-            if (!response.ok) {
-                throw new Error('Failed to fetch magnetic variation data');
-            }
-            const text = await response.text();
-            magvarData = parseMagvarData(text);
+            const response = await fetch('./WMM.COF');
+            if (!response.ok) throw new Error('Failed to fetch magnetic variation data');
+            magvarData = parseMagvarData(await response.text());
         }
-
         hideLoadingMessage();
-
-        // Create the overlay with the loaded data
-        if (container && globe && globe.projection) {
-            createMagvarOverlay(container, globe.projection, magvarData);
-        }
-
-        // Enable UI
+        if (container && globe?.projection) createMagvarOverlay(container, globe.projection, magvarData);
         const magvarToggle = document.getElementById('toggle-magvar-overlay');
         if (magvarToggle) {
             magvarToggle.disabled = false;
+            magvarToggle.checked = true;
+            toggleMagvarOverlay(true);
         }
-
-        return magvarData;
     } catch (error) {
         console.error("Error loading magnetic variation data:", error);
         hideLoadingMessage();
-        return null;
     }
 }
 
-// Setup UI control event listeners
 function setupUIControls() {
-    // Magnetic variation toggle
     const magvarToggle = document.getElementById('toggle-magvar-overlay');
     if (magvarToggle) {
-        // Initially disable until data is loaded
         magvarToggle.disabled = !dataAvailable.magvar;
-
-        // Add event listener for checkbox changes
-        magvarToggle.addEventListener('change', () => {
-            toggleMagvarOverlay(magvarToggle.checked);
-        });
+        magvarToggle.addEventListener('change', () => toggleMagvarOverlay(magvarToggle.checked));
     }
-
-    // Magvar resolution slider
     const resolutionSlider = document.getElementById('magvar-resolution');
     if (resolutionSlider) {
-        // Set default resolution value
-        const defaultResolution = 8;
-        resolutionSlider.value = defaultResolution;
-
-        resolutionSlider.addEventListener('input', () => {
-            const resolution = parseInt(resolutionSlider.value);
-            setMagvarResolution(resolution);
-        });
+        resolutionSlider.value = 8;
+        resolutionSlider.addEventListener('input', () => setMagvarResolution(parseInt(resolutionSlider.value)));
     }
-
-    // Year input for magnetic variation
     const yearInput = document.getElementById('magvar-year');
     if (yearInput) {
-        const currentYear = new Date().getFullYear();
-        yearInput.value = currentYear;
-
+        yearInput.value = new Date().getFullYear();
         yearInput.addEventListener('change', () => {
             const year = parseInt(yearInput.value);
             if (year >= 1900 && year <= 2030) {
@@ -171,37 +145,36 @@ function setupUIControls() {
             }
         });
     }
-
-    // Globe click for coordinates
+    const layerControls = {
+        'toggle-layer-airports': 'airports',
+        'toggle-layer-waypoints': 'waypoints',
+        'toggle-layer-navaids': 'navaids'
+    };
+    for (const [id, layerName] of Object.entries(layerControls)) {
+        const toggle = document.getElementById(id);
+        if (toggle) {
+            toggle.checked = visibleLayers[layerName];
+            toggle.addEventListener('change', () => {
+                visibleLayers[layerName] = toggle.checked;
+                renderNavigationData();
+            });
+        }
+    }
     const globeContainer = document.getElementById('globe-container');
-    if (globeContainer && globe && globe.projection) {
+    if (globeContainer && globe?.projection) {
         globeContainer.addEventListener('click', (event) => {
             const rect = globeContainer.getBoundingClientRect();
-            const x = event.clientX - rect.left;
-            const y = event.clientY - rect.top;
-
-            const coords = coordsAtPoint(x, y, globe.projection);
-
+            const coords = coordsAtPoint(event.clientX - rect.left, event.clientY - rect.top, globe.projection);
             if (coords) {
-                console.log('Clicked coordinates:', coords);
-
-                // Display coordinates in a UI element if available
                 const coordDisplay = document.getElementById('clicked-coordinates');
-                if (coordDisplay) {
-                    coordDisplay.textContent = `Lat: ${coords[1].toFixed(2)}°, Lon: ${coords[0].toFixed(2)}°`;
-                }
+                if (coordDisplay) coordDisplay.textContent = `Lat: ${coords[1].toFixed(2)}°, Lon: ${coords[0].toFixed(2)}°`;
             }
         });
     }
 }
 
 function coordsAtPoint(x, y, projection) {
-    // Convert screen coordinates back to geographic coordinates
-    const p = projection.invert([x, y]);
-    if (p) {
-        return p; // Returns [lon, lat]
-    }
-    return null;
+    return projection.invert([x, y]) || null;
 }
 
 function setupResizeHandler() {
@@ -209,17 +182,7 @@ function setupResizeHandler() {
         if (globe) {
             config.width = window.innerWidth - getSidebarWidth();
             config.height = window.innerHeight;
-
-            // Update globe size (if you have a resize method)
-            // globe.resize(config.width, config.height);
-
-            // Update magvar overlay size
-            if (dataAvailable.magvar) {
-                const container = document.getElementById("globe-container");
-                if (container) {
-                    updateMagvarOverlay();
-                }
-            }
+            if (dataAvailable.magvar) updateMagvarOverlay();
         }
     });
 }
@@ -227,38 +190,23 @@ function setupResizeHandler() {
 function setupRotationHandler() {
     const rotationSpeedInput = document.getElementById('rotation-speed');
     if (rotationSpeedInput && globe) {
-        let rotationSpeed = 0;
-        let rotation = 0;
-
-        rotationSpeedInput.addEventListener('input', (e) => {
-            rotationSpeed = e.target.value / 10;
-        });
-
+        let rotationSpeed = 0, rotation = 0;
+        rotationSpeedInput.addEventListener('input', e => rotationSpeed = e.target.value / 10);
         function animate() {
-            if (rotationSpeed > 0 && globe && globe.projection) {
-                rotation += rotationSpeed;
-                const currentRotate = globe.projection.rotate();
-                currentRotate[0] = rotation % 360;
-                globe.projection.rotate(currentRotate);
-
-                // Update all visual elements
-                if (globe.svg) {
-                    globe.svg.selectAll(".sphere, .graticule, .land").attr("d", globe.path);
-                }
-
-                // Update magvar overlay when rotating
+            if (rotationSpeed > 0 && globe?.projection) {
+                rotation = (rotation + rotationSpeed) % 360;
+                globe.projection.rotate([rotation, ...globe.projection.rotate().slice(1)]);
+                globe.svg?.selectAll(".sphere, .graticule, .land").attr("d", globe.path);
+                globe.svg?.selectAll(".nav-point").attr("transform", d => {
+                    const pos = globe.projection([d.lon, d.lat]);
+                    return pos ? `translate(${pos[0]}, ${pos[1]})` : "translate(-1000,-1000)";
+                });
                 updateMagvarOverlay();
             }
             requestAnimationFrame(animate);
         }
-
         animate();
     }
-}
-
-function updateDataSourceInfo(source, timestamp) {
-    document.getElementById('data-source-info').textContent = source || 'Unknown';
-    document.getElementById('data-source-timestamp').textContent = timestamp || 'N/A';
 }
 
 function getSidebarWidth() {
@@ -267,11 +215,9 @@ function getSidebarWidth() {
 
 function showLoadingMessage(message, isError = false) {
     const container = document.getElementById("globe-container");
-    if (!container) return console.warn("Container not ready for loading message.");
-
-    let svg = container.querySelector("svg.loading-overlay");
-    if (!svg) {
-        svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    if (!container) return;
+    let svg = container.querySelector("svg.loading-overlay") || document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    if (!svg.parentNode) {
         svg.setAttribute("class", "loading-overlay");
         svg.setAttribute("width", "100%");
         svg.setAttribute("height", "100%");
@@ -281,7 +227,6 @@ function showLoadingMessage(message, isError = false) {
         svg.style.zIndex = "1000";
         container.appendChild(svg);
     }
-
     if (!loadingText) {
         loadingText = document.createElementNS("http://www.w3.org/2000/svg", "text");
         loadingText.setAttribute("x", "50%");
@@ -290,16 +235,14 @@ function showLoadingMessage(message, isError = false) {
         loadingText.setAttribute("dy", "0.35em");
         svg.appendChild(loadingText);
     }
-
     loadingText.textContent = message;
-    loadingText.setAttribute("fill", isError ? '#ff8888' : '#ffffff');
+    loadingText.setAttribute("fill", isError ? '#ff8888' : '#fff');
     svg.style.display = "block";
 }
 
 function hideLoadingMessage() {
-    const container = document.getElementById("globe-container");
-    const svg = container?.querySelector("svg.loading-overlay");
-    if (svg) svg.style.display = "none";
+    const overlay = document.querySelector("#globe-container svg.loading-overlay");
+    if (overlay) overlay.style.display = "none";
 }
 
 document.addEventListener('DOMContentLoaded', initApp);

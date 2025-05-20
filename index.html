@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link rel="shortcut icon" href="#">
     <meta charset="UTF-8">
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <title>EarthVie</title>
@@ -84,6 +85,54 @@
         about: document.getElementById('panel-about')
     };
 
+    function adjustGlobeContainerSize() {
+        const globeContainer = document.getElementById('globe-container');
+        const sidebarContent = document.getElementById('sidebar-content');
+        const sidebarVisible = document.body.classList.contains('panel-visible');
+        let availableWidth = window.innerWidth;  // Start with full window width
+        let sidebarWidth = 0; // Initialize sidebarWidth
+
+        if (sidebarVisible) {
+            sidebarWidth = sidebarContent.offsetWidth; // Get sidebar width if visible
+            availableWidth -= sidebarWidth; // Subtract sidebar width if visible
+        }
+
+        // Apply styles *before* the class change for the panel
+        sidebarContent.style.transform = sidebarVisible ? `translateX(0)` : `translateX(-${sidebarWidth}px)`;
+
+        globeContainer.style.width = `${availableWidth}px`;
+        globeContainer.style.height = `${window.innerHeight}px`; // Occupy full window height
+
+        // Reset margins, just in case:
+        globeContainer.style.marginLeft = '0';
+        globeContainer.style.marginTop = '0';
+    }
+
+    sidebarItems.forEach(item => {
+        item.addEventListener('click', () => {
+            document.querySelector('.sidebar-item.active')?.classList.remove('active');
+            item.classList.add('active');
+
+            // Remove 'visible' class from all panels *before* animating
+            Object.values(panels).forEach(p => p.classList.remove('visible'));
+            document.body.classList.add('panel-visible'); // Add class before calling adjust size
+            adjustGlobeContainerSize();
+
+            // Add 'visible' class to the target panel *after* starting the animation
+            panels[item.dataset.panel]?.classList.add('visible');
+        });
+    });
+
+    document.querySelectorAll('.hide-panel-button').forEach(btn => {
+        btn.addEventListener('click', () => {
+            // Remove 'visible' class from all panels *before* animating
+            Object.values(panels).forEach(p => p.classList.remove('visible'));
+
+            document.body.classList.remove('panel-visible'); // Remove class before calling adjust size
+            adjustGlobeContainerSize();
+        });
+    });
+
     sidebarItems.forEach(item => {
         item.addEventListener('click', () => {
             document.querySelector('.sidebar-item.active')?.classList.remove('active');
@@ -91,6 +140,7 @@
             Object.values(panels).forEach(p => p.classList.remove('visible'));
             panels[item.dataset.panel]?.classList.add('visible');
             document.body.classList.add('panel-visible');
+            adjustGlobeContainerSize(); // Add this line
         });
     });
 
@@ -98,15 +148,25 @@
         btn.addEventListener('click', () => {
             Object.values(panels).forEach(p => p.classList.remove('visible'));
             document.body.classList.remove('panel-visible');
+            adjustGlobeContainerSize(); // Add this line
         });
     });
+
+    // Also adjust on window resize
+    window.addEventListener('resize', adjustGlobeContainerSize);
+
+    // Call once on initial load
+    document.addEventListener('DOMContentLoaded', adjustGlobeContainerSize);
 
     fetch("./MagVar3D_v3/ne_110m_land.geojson")
         .then(res => res.json())
         .then(landData => {
-            setupSvgGlobe(document.getElementById("globe-container"), landData, {width: 1500, height: 900});
+            const globeContainer = document.getElementById("globe-container");
+            const width = globeContainer.offsetWidth;
+            const height = globeContainer.offsetHeight;
+            setupSvgGlobe(globeContainer, landData, {width: width, height: height});
         });
+
 </script>
-<script src="https://unpkg.com/geomagnetism@0.0.2/dist/geomagnetism.min.js"></script>
 </body>
 </html>
