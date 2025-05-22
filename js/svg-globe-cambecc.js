@@ -1,12 +1,12 @@
-import * as d3 from "d3";
-import {
-    createMagvarOverlay,
-    toggleMagvarOverlay,
-    updateMagvarOverlay,
-    setMagvarResolution
-} from './magvar-canvas-overlay.js';
+/**
+ * svg-globe-cambecc.js - adapted from Cambecc's globe rendering
+ */
 
-export function setupSvgGlobe(container, landGeoJson, options = {}) {
+// Assume d3, µ, and functions from magvar-canvas-overlay.js are available globally
+// Removed import statements for global scope approach
+
+// Renamed and exposed globally
+window.setupSvgGlobe = function(container, landGeoJson, options = {}) {
     const {
         width = 800,
         height = 800,
@@ -17,16 +17,17 @@ export function setupSvgGlobe(container, landGeoJson, options = {}) {
         graticuleOpacity = 0.7
     } = options;
 
+    // Use globally available d3
     // Remove any existing SVG
     d3.select(container).select("svg").remove();
 
     // Create projection and path
-    const projection = d3.geoOrthographic()
+    const projection = d3.geo.orthographic()
         .scale(Math.min(width, height) / 2.1)
         .translate([width / 2, height / 2])
         .clipAngle(90);
 
-    const path = d3.geoPath(projection);
+    const path = d3.geo.path().projection(projection);
 
     // Create SVG and append base layers
     const svg = d3.select(container)
@@ -69,13 +70,14 @@ export function setupSvgGlobe(container, landGeoJson, options = {}) {
 
     // Add zoom behavior
     svg.call(
-        d3.zoom()
+        d3.behavior.zoom()
             .scaleExtent([width / 4, width * 2])
             .filter(event => event.type === 'wheel')
             .on("zoom", event => {
                 projection.scale(event.transform.k);
                 updateGeographicPaths();
-                updateMagvarOverlay();
+                // Call the globally available updateMagvarOverlay
+                if (window.updateMagvarOverlay) updateMagvarOverlay();
             })
     );
 
@@ -96,22 +98,45 @@ export function setupSvgGlobe(container, landGeoJson, options = {}) {
 
                 projection.rotate(rotation);
                 updateGeographicPaths();
-                updateMagvarOverlay();
+                // Call the globally available updateMagvarOverlay
+                if (window.updateMagvarOverlay) updateMagvarOverlay();
             })
     );
 
-    // Create globe wrapper with API for external use
+    // Create globe wrapper with API for external use (exposed on the container)
     container.__globeWrapper = {
         svg,
         projection,
         path,
-        createMagvarOverlay: () => createMagvarOverlay(container, projection),
-        toggleMagvarOverlay: visible => toggleMagvarOverlay(visible),
-        setMagvarResolution: resolution => setMagvarResolution(resolution)
+        // References to globally available magvar functions
+        createMagvarOverlay: () => { if (window.createMagvarOverlay) return createMagvarOverlay(container, projection); },
+        toggleMagvarOverlay: visible => { if (window.toggleMagvarOverlay) toggleMagvarOverlay(visible); },
+        setMagvarResolution: resolution => { if (window.setMagvarResolution) setMagvarResolution(resolution); },
+        setMagvarYear: year => { if (window.setMagvarYear) setMagvarYear(year); }
     };
 
-    // Initialize magnetic variation overlay
-    container.__globeWrapper.createMagvarOverlay();
+    // This function is now exposed globally
+    window.coordsAtPoint = function(x, y, projection) {
+        // Use globally available µ if needed, but basic projection.invert is sufficient here
+        return projection.invert([x, y]);
+    };
 
-    return container.__globeWrapper;
-}
+    // Placeholder for renderNavigationData - implement this based on your navigation data rendering needs
+    // Exposed globally
+    window.renderNavigationData = function() {
+        console.warn("renderNavigationData not implemented.");
+        // Example: You would typically access your navigation data (airports, waypoints, navaids)
+        // and draw them on the globe using the projection.
+        // The `visibleLayers` object (now global) would tell you which layers are currently toggled on.
+    };
+
+    // Placeholder for visibleLayers - initialize this object based on your application state
+    // Exposed globally
+    window.visibleLayers = {
+        airports: false,
+        waypoints: false,
+        navaids: false
+    };
+
+    return container.__globeWrapper; // Return the wrapper
+};

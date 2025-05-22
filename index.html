@@ -1,172 +1,133 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <link rel="shortcut icon" href="#">
-    <meta charset="UTF-8">
-    <meta content="width=device-width, initial-scale=1.0" name="viewport">
-    <title>EarthVie</title>
-    <link href="style.css" rel="stylesheet">
+    <meta charset="utf-8"/>
+    <title>Globe</title>
+    <meta itemprop="name"                                      content="Globe"/>
+    <meta itemprop="description"     name="description"        content="A globe visualization project"/>
+    <meta itemprop="author"          name="author"             content="Your Name"/>
+
+    <link rel="stylesheet" href="style.css">
+
+    <!-- Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.6.0/underscore-min.js" charset="utf-8"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/backbone.js/1.1.0/backbone-min.js" charset="utf-8"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/1.1.0/topojson.min.js" charset="utf-8"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.3.10/d3.min.js" charset="utf-8"></script>
+    <script src="https://d3js.org/d3.geo.projection.v0.min.js" charset="utf-8"></script>
+    <script src="https://d3js.org/d3.geo.polyhedron.v0.min.js" charset="utf-8"></script>
+    <!-- Replaced when.js with a standard Promise polyfill -->
+    <script src="https://cdn.jsdelivr.net/npm/es6-promise@4/dist/es6-promise.auto.min.js"></script>
+
+    <!-- Original Cambecc Earth utility files -->
+    <script src="./js/micro.js" charset="utf-8"></script>
+    <script src="./js/globes.js" charset="utf-8"></script>
+    <script src="./js/products.js" charset="utf-8"></script>
+
+    <!-- Geomagnetism library (add your local path or CDN here) -->
+    <!-- <script src="path/to/your/geomagnetism.js" charset="utf-8"></script> -->
+
+    <!-- Your project scripts (adapted to global scope) -->
+    <script src="./js/svg-globe-cambecc.js" charset="utf-8"></script>
+    <script src="./js/magvar-canvas-overlay.js" charset="utf-8"></script>
+    <script src="./js/app.js" charset="utf-8"></script>
+    <script>
+        console.log("--- Debugging when.js ---");
+        console.log("Type of window.when:", typeof window.when);
+        console.log("Value of window.when:", window.when);
+        if (window.when && typeof window.when.defer === 'function') {
+          console.log("when.js seems to be loaded correctly and exposes defer.");
+        } else {
+          console.error("when.js is NOT loaded correctly. \'when\' or \'when.defer\' is missing/not a function.", window.when);
+        }
+        console.log("--- End Debugging when.js ---");
+      </script>
+      
 </head>
 <body>
-<div id="left-sidebar">
-    <div class="sidebar-item active" data-panel="layers">
-        <span class="icon">🗺️</span><span class="label">Layers</span>
+
+    <div id="left-sidebar">
+        <ul>
+            <li class="sidebar-item" data-panel="layers">Layers</li>
+            <li class="sidebar-item" data-panel="settings">Settings</li>
+            <li class="sidebar-item" data-panel="about">About</li>
+        </ul>
     </div>
-    <div class="sidebar-item" data-panel="settings">
-        <span class="icon">⚙️</span><span class="label">Settings</span>
-    </div>
-    <div class="sidebar-item" data-panel="about">
-        <span class="icon">ℹ️</span><span class="label">About</span>
-    </div>
-</div>
-<div id="sidebar-content">
-    <div class="sidebar-content-panel visible" id="panel-layers">
-        <div class="panel-header">
-            <h3>Layers</h3>
-            <button class="hide-panel-button">&times;</button>
-        </div>
-        <div class="panel-inner-content">
-            <h4>Map Layers</h4>
-            <ul class="layer-list">
-                <li><input checked id="toggle-layer-airports" type="checkbox"><label for="toggle-layer-airports">Airports</label>
-                </li>
-                <li><input checked id="toggle-layer-waypoints" type="checkbox"><label for="toggle-layer-waypoints">Waypoints</label>
-                </li>
-                <li><input checked id="toggle-layer-navaids" type="checkbox"><label
-                        for="toggle-layer-navaids">Navaids</label></li>
-                <li><input checked id="toggle-magvar-overlay" type="checkbox"><label for="toggle-magvar-overlay">Magnetic
-                    Variation</label></li>
-            </ul>
-            <div class="control-group">
-                <label for="magvar-resolution">Magnetic Variation Resolution:</label>
-                <input type="range" id="magvar-resolution" min="5" max="30" value="15" step="5">
-                <span class="resolution-value">15°</span>
+
+    <div id="sidebar-content">
+        <div id="panel-layers" class="sidebar-content-panel">
+            <div class="panel-header">
+                <h3>Layers</h3>
+                <button class="hide-panel-button">×</button>
+            </div>
+            <div class="panel-inner-content">
+                <!-- Layers content here -->
+                <ul>
+                    <li>
+                        <input checked="" id="toggle-magvar-overlay" type="checkbox"><label for="toggle-magvar-overlay">Magnetic
+                            Variation</label>
+                    </li>
+                     <li>
+                        <input id="toggle-layer-airports" type="checkbox"><label for="toggle-layer-airports">Airports</label>
+                    </li>
+                    <li>
+                        <input id="toggle-layer-waypoints" type="checkbox"><label for="toggle-layer-waypoints">Waypoints</label>
+                    </li>
+                     <li>
+                        <input id="toggle-layer-navaids" type="checkbox"><label for="toggle-layer-navaids">Navaids</label>
+                    </li>
+                </ul>
+
             </div>
         </div>
+
+        <div id="panel-settings" class="sidebar-content-panel">
+             <div class="panel-header">
+                <h3>Settings</h3>
+                <button class="hide-panel-button">×</button>
+            </div>
+             <div class="panel-inner-content">
+                <!-- Settings content here -->
+                 <div>
+                    <label for="magvar-resolution">Magnetic Variation Resolution:</label>
+                    <input type="range" id="magvar-resolution" name="magvar-resolution" min="1" max="20" step="1">
+                </div>
+                 <div>
+                    <label for="magvar-year">Magnetic Variation Year:</label>
+                    <input type="number" id="magvar-year" name="magvar-year" min="1900" max="2030">
+                </div>
+            </div>
+        </div>
+
+        <div id="panel-about" class="sidebar-content-panel">
+             <div class="panel-header">
+                <h3>About</h3>
+                <button class="hide-panel-button">×</button>
+            </div>
+             <div class="panel-inner-content">
+                <!-- About content here -->
+                 <p>This is a globe visualization project.</p>
+                 <p id="clicked-coordinates"></p>
+             </div>
+        </div>
     </div>
-    <div class="sidebar-content-panel" id="panel-settings">
-        <div class="panel-header">
-            <h3>Settings</h3>
-            <button class="hide-panel-button">&times;</button>
-        </div>
-        <div class="panel-inner-content">
-            <h4>Display</h4>
-            <label><input checked id="enable-dark-mode" type="checkbox">Dark Mode</label>
-            <label><input id="enable-high-contrast" type="checkbox">High Contrast</label>
-            <h4>Preferences</h4>
-            <label><input checked id="show-capitals" type="checkbox">Show Capitals</label>
-        </div>
+
+    <div id="display">
+        <svg id="map" class="fill-screen"></svg>
+        <canvas id="animation" class="fill-screen"></canvas>
+        <canvas id="overlay" class="fill-screen"></canvas>
+        <svg id="foreground" class="fill-screen"></svg>
     </div>
-    <div class="sidebar-content-panel" id="panel-about">
-        <div class="panel-header">
-            <h3>About</h3>
-            <button class="hide-panel-button">&times;</button>
-        </div>
-        <div class="panel-inner-content">
-            <h4>EarthView Globe</h4>
-            <p>Modern interactive globe visualization.<br>
-                Data source: <span id="data-source-info">N/A</span><br>
-                Timestamp: <span id="data-source-timestamp">N/A</span></p>
-        </div>
+
+    <div id="details">
+         <!-- Status and progress elements required by report object -->
+        <p id="status"></p>
+        <p id="progress" class="invisible"></p>
+         <!-- Other details like location can go here if needed -->
+         <!-- <div id="location">...</div> -->
+         <!-- <p id="earth">...</p> -->
+         <!-- <div id="menu">...</div> -->
     </div>
-</div>
-<div id="globe-container"></div>
-<!--          <footer id="footer-info">-->
-<!--            &copy; 2023 EarthVie &mdash; <a href="#">Support</a> &middot; <a href="#">Terms</a> &middot; <a href="#">Privacy</a>-->
-<!--          </footer>-->
-<script src="https://d3js.org/d3.v7.min.js"></script>
-<script type="module">
-    import {setupSvgGlobe} from './js/svg-globe-cambecc.js';
 
-    const sidebarItems = document.querySelectorAll('.sidebar-item');
-    const panels = {
-        layers: document.getElementById('panel-layers'),
-        settings: document.getElementById('panel-settings'),
-        about: document.getElementById('panel-about')
-    };
-
-    function adjustGlobeContainerSize() {
-        const globeContainer = document.getElementById('globe-container');
-        const sidebarContent = document.getElementById('sidebar-content');
-        const sidebarVisible = document.body.classList.contains('panel-visible');
-        let availableWidth = window.innerWidth;  // Start with full window width
-        let sidebarWidth = 0; // Initialize sidebarWidth
-
-        if (sidebarVisible) {
-            sidebarWidth = sidebarContent.offsetWidth; // Get sidebar width if visible
-            availableWidth -= sidebarWidth; // Subtract sidebar width if visible
-        }
-
-        // Apply styles *before* the class change for the panel
-        sidebarContent.style.transform = sidebarVisible ? `translateX(0)` : `translateX(-${sidebarWidth}px)`;
-
-        globeContainer.style.width = `${availableWidth}px`;
-        globeContainer.style.height = `${window.innerHeight}px`; // Occupy full window height
-
-        // Reset margins, just in case:
-        globeContainer.style.marginLeft = '0';
-        globeContainer.style.marginTop = '0';
-    }
-
-    sidebarItems.forEach(item => {
-        item.addEventListener('click', () => {
-            document.querySelector('.sidebar-item.active')?.classList.remove('active');
-            item.classList.add('active');
-
-            // Remove 'visible' class from all panels *before* animating
-            Object.values(panels).forEach(p => p.classList.remove('visible'));
-            document.body.classList.add('panel-visible'); // Add class before calling adjust size
-            adjustGlobeContainerSize();
-
-            // Add 'visible' class to the target panel *after* starting the animation
-            panels[item.dataset.panel]?.classList.add('visible');
-        });
-    });
-
-    document.querySelectorAll('.hide-panel-button').forEach(btn => {
-        btn.addEventListener('click', () => {
-            // Remove 'visible' class from all panels *before* animating
-            Object.values(panels).forEach(p => p.classList.remove('visible'));
-
-            document.body.classList.remove('panel-visible'); // Remove class before calling adjust size
-            adjustGlobeContainerSize();
-        });
-    });
-
-    sidebarItems.forEach(item => {
-        item.addEventListener('click', () => {
-            document.querySelector('.sidebar-item.active')?.classList.remove('active');
-            item.classList.add('active');
-            Object.values(panels).forEach(p => p.classList.remove('visible'));
-            panels[item.dataset.panel]?.classList.add('visible');
-            document.body.classList.add('panel-visible');
-            adjustGlobeContainerSize(); // Add this line
-        });
-    });
-
-    document.querySelectorAll('.hide-panel-button').forEach(btn => {
-        btn.addEventListener('click', () => {
-            Object.values(panels).forEach(p => p.classList.remove('visible'));
-            document.body.classList.remove('panel-visible');
-            adjustGlobeContainerSize(); // Add this line
-        });
-    });
-
-    // Also adjust on window resize
-    window.addEventListener('resize', adjustGlobeContainerSize);
-
-    // Call once on initial load
-    document.addEventListener('DOMContentLoaded', adjustGlobeContainerSize);
-
-    fetch("./MagVar3D_v3/ne_110m_land.geojson")
-        .then(res => res.json())
-        .then(landData => {
-            const globeContainer = document.getElementById("globe-container");
-            const width = globeContainer.offsetWidth;
-            const height = globeContainer.offsetHeight;
-            setupSvgGlobe(globeContainer, landData, {width: width, height: height});
-        });
-
-</script>
 </body>
 </html>
